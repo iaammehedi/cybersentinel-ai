@@ -81,12 +81,24 @@ def validate_target(url: str) -> str:
             400, "শুধু domain-এর root URL পরীক্ষা করা যাবে।"
         )
 
-    host = parsed.hostname.encode("idna").decode("ascii").lower().rstrip(".")
+    host = (
+    parsed.hostname.encode("idna")
+    .decode("ascii")
+    .lower()
+    .rstrip(".")
+)
 
-    if host not in ALLOWED_HOSTS:
-        raise HTTPException(
-            403, "এই domain অনুমোদিত তালিকায় নেই।"
-        )
+if DEMO_MODE:
+    raise HTTPException(
+        403,
+        "Demo mode enabled: scanning is disabled."
+    )
+
+if host not in ALLOWED_HOSTS:
+    raise HTTPException(
+        403,
+        "এই domain অনুমোদিত তালিকায় নেই।"
+    )
 
     # DNS-এর private, loopback, link-local বা reserved IP ব্লক।
     try:
