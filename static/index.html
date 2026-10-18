@@ -1,0 +1,167 @@
+
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>CyberSentinel AI</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #0b1120;
+  --panel: #141e30;
+  --line: #2c3b50;
+  --accent: #38d9c0;
+  --text: #eef5ff;
+  --muted: #9cacc3;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.6 system-ui, sans-serif;
+}
+main { width: min(760px, 100%); margin: auto; padding: 20px; }
+header { padding: 16px 0 22px; }
+h1 { font-size: 27px; margin: 0; }
+p, .muted { color: var(--muted); }
+.panel {
+  border: 1px solid var(--line); background: var(--panel);
+  border-radius: 16px; padding: 18px; margin-bottom: 16px;
+}
+label { display: block; margin: 14px 0 6px; }
+input {
+  width: 100%; padding: 13px; border-radius: 9px;
+  border: 1px solid var(--line); background: var(--bg);
+  color: var(--text); font-size: 16px;
+}
+button {
+  width: 100%; margin-top: 16px; padding: 13px;
+  border: 0; border-radius: 9px; background: var(--accent);
+  color: #06221f; font-weight: 700; font-size: 16px;
+}
+button:disabled { opacity: .55; }
+.check { display: flex; gap: 10px; align-items: start; }
+.check input { width: 20px; margin-top: 5px; }
+pre {
+  white-space: pre-wrap; overflow-wrap: anywhere;
+  font-size: 13px; color: var(--text);
+}
+.status { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>🛡️ CyberSentinel AI</h1>
+  <p>Passive security analysis · Permission-controlled</p>
+</header>
+
+<section class="panel">
+  <h2>নিরাপত্তা পরীক্ষা</h2>
+  <p>শুধু নিজের বা লিখিত অনুমতিপ্রাপ্ত HTTPS domain ব্যবহার করো।</p>
+
+  <form id="scanForm">
+    <label for="token">Private scan token</label>
+    <input id="token" type="password" autocomplete="off"
+           required placeholder="Render environment token">
+
+    <label for="target">অনুমোদিত domain URL</label>
+    <input id="target" type="url" required
+           placeholder="https://your-domain.example">
+
+    <label class="check">
+      <input id="consent" type="checkbox" required>
+      <span>আমি এই domain পরীক্ষা করার অনুমতি পেয়েছি এবং
+      একটি সীমিত HTTPS request পাঠাতে সম্মত।</span>
+    </label>
+
+    <button id="scanButton" type="submit">নিরাপত্তা পরীক্ষা চালাও</button>
+  </form>
+  <p id="status" role="status" aria-live="polite"></p>
+</section>
+
+<section class="panel">
+  <h2>পরীক্ষার রিপোর্ট</h2>
+  <p class="muted">সর্বশেষ ফলাফল এখানে দেখা যাবে।</p>
+  <pre id="report">এখনো কোনো পরীক্ষা চালানো হয়নি।</pre>
+  <button id="download" type="button" disabled>
+    JSON রিপোর্ট সংরক্ষণ
+  </button>
+</section>
+
+<section class="panel">
+  <h2>সীমাবদ্ধতা</h2>
+  <p>এই সংস্করণে শুধু HTTP status ও security header পরীক্ষা হয়।
+  এটি পূর্ণাঙ্গ vulnerability scan নয়।</p>
+</section>
+</main>
+
+<script>
+const form = document.getElementById("scanForm");
+const statusEl = document.getElementById("status");
+const reportEl = document.getElementById("report");
+const button = document.getElementById("scanButton");
+const downloadButton = document.getElementById("download");
+
+let lastReport = null;
+
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  button.disabled = true;
+  downloadButton.disabled = true;
+  lastReport = null;
+  statusEl.textContent = "পরীক্ষা চলছে...";
+  reportEl.textContent = "";
+
+  const token = document.getElementById("token").value;
+  const url = document.getElementById("target").value;
+  const consent = document.getElementById("consent").checked;
+
+  try {
+    const response = await fetch("/api/scan", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Scan-Token": token
+      },
+      body: JSON.stringify({
+        url,
+        confirm_authorized: consent
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || "পরীক্ষা ব্যর্থ হয়েছে");
+    }
+
+    lastReport = data;
+    reportEl.textContent = JSON.stringify(data, null, 2);
+    statusEl.textContent = "পরীক্ষা সম্পন্ন। ফলাফল যাচাই করো।";
+    downloadButton.disabled = false;
+  } catch (error) {
+    statusEl.textContent = "ত্রুটি: " + error.message;
+    reportEl.textContent = "কোনো যাচাইকৃত রিপোর্ট পাওয়া যায়নি।";
+  } finally {
+    button.disabled = false;
+  }
+});
+
+downloadButton.addEventListener("click", () => {
+  if (!lastReport) return;
+
+  const blob = new Blob(
+    [JSON.stringify(lastReport, null, 2)],
+    { type: "application/json" }
+  );
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "cybersentinel-report.json";
+  link.click();
+  URL.revokeObjectURL(link.href);
+});
+</script>
+</body>
+</html>
