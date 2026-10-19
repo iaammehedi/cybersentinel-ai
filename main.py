@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import time
 import socket
 import secrets
@@ -9,6 +10,7 @@ import ssl
 import http.client
 
 from datetime import datetime, timezone
+from typing import Literal
 from urllib.parse import urlsplit
 
 from fastapi import FastAPI, HTTPException, Header, Request
@@ -23,6 +25,11 @@ SCAN_TOKEN = os.environ.get("SCAN_TOKEN", "")
 DEMO_MODE = os.environ.get(
     "DEMO_MODE", "true"
 ).strip().lower() == "true"
+
+# Optional: chat is disabled (fails gracefully) until this is set.
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash-lite")
+GEMINI_HOST = "generativelanguage.googleapis.com"
 
 
 def canonical_host(value: str) -> str:
@@ -123,6 +130,38 @@ FAIL_WINDOW = 300.0      # ... per 5 minutes, per client
 failed_attempts: dict[str, list[float]] = {}
 fail_lock = threading.Lock()
 
+# Chat rate limits (in memory, resets on restart). The global cap
+# protects the shared free-tier quota; the per-client cap stops one
+# visitor from burning the whole quota alone.
+CHAT_PER_CLIENT_LIMIT = 6
+CHAT_PER_CLIENT_WINDOW = 60.0
+CHAT_GLOBAL_LIMIT = 8
+CHAT_GLOBAL_WINDOW = 60.0
+chat_client_calls: dict[str, list[float]] = {}
+chat_global_calls: list[float] = []
+chat_lock = threading.Lock()
+
+# The model is told, every time, what it may and may not do. This is
+# a strong hint, not a guarantee — the frontend and this comment are
+# not a substitute for not implementing exploit/attack features.
+CHAT_SYSTEM_PROMPT = """তুমি CyberSentinel AI অ্যাপ্লিকেশনের একটি স্কোপড (সীমিত) সহকারী।
+
+তোমার কাজ শুধু:
+- Website security-র মৌলিক ধারণা (HTTPS, TLS, security header, cookie flag, CSP ইত্যাদি) ব্যাখ্যা করা।
+- এই অ্যাপ্লিকেশনের Scanner, Reports, History, Settings পেজ ব্যবহার করতে সাহায্য করা।
+- Scanner থেকে পাওয়া ফলাফল বা security header বুঝিয়ে বলা।
+- সাধারণ defensive security best practice বলা (patch, backup, least privilege ইত্যাদি)।
+
+তুমি কখনো করবে না:
+- exploit কোড, attack payload, malware, বা password/credential crack করার কৌশল দেওয়া।
+- কোনো নির্দিষ্ট ওয়েবসাইট আক্রমণ করার নির্দেশনা দেওয়া।
+- login brute-force, SQL injection payload, XSS payload ইত্যাদি লেখা, এমনকি "শিক্ষামূলক" বলা হলেও।
+- অননুমোদিত সিস্টেম পরীক্ষার পরামর্শ দেওয়া।
+
+Website security-র বাইরের বিষয় জিজ্ঞেস করা হলে ভদ্রভাবে জানাও যে তুমি শুধু website security নিয়ে সাহায্য করতে পারো।
+
+ব্যবহারকারী যে ভাষায় লেখে (বাংলা বা ইংরেজি), সেই ভাষায় সংক্ষিপ্ত ও স্পষ্টভাবে উত্তর দাও।"""
+
 
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
@@ -197,9 +236,55 @@ def require_token(request: Request, supplied: str) -> None:
         raise HTTPException(401, "অনুমোদিত token প্রয়োজন.")
 
 
+def check_chat_rate_limit(client: str) -> None:
+    now = time.monotonic()
+
+    with chat_lock:
+        chat_global_calls[:] = [
+            t for t in chat_global_calls if now - t < CHAT_GLOBAL_WINDOW
+        ]
+
+        if len(chat_global_calls) >= CHAT_GLOBAL_LIMIT:
+            raise HTTPException(
+                429, "এখন অনেক অনুরোধ আসছে; একটু পরে আবার চেষ্টা করো."
+            )
+
+        recent = [
+            t for t in chat_client_calls.get(client, [])
+            if now - t < CHAT_PER_CLIENT_WINDOW
+        ]
+
+        if len(recent) >= CHAT_PER_CLIENT_LIMIT:
+            raise HTTPException(
+                429, "একটু ধীরে; কিছুক্ষণ অপেক্ষা করে আবার চেষ্টা করো."
+            )
+
+        recent.append(now)
+        chat_client_calls[client] = recent
+        chat_global_calls.append(now)
+
+        if len(chat_client_calls) > 1000:
+            for k in list(chat_client_calls):
+                chat_client_calls[k] = [
+                    t for t in chat_client_calls[k]
+                    if now - t < CHAT_PER_CLIENT_WINDOW
+                ]
+                if not chat_client_calls[k]:
+                    del chat_client_calls[k]
+
+
 class ScanRequest(BaseModel):
     url: str = Field(min_length=9, max_length=253)
     confirm_authorized: StrictBool
+
+
+class ChatTurn(BaseModel):
+    role: Literal["user", "model"]
+    text: str = Field(min_length=1, max_length=4000)
+
+
+class ChatRequest(BaseModel):
+    messages: list[ChatTurn] = Field(min_length=1, max_length=12)
 
 
 def validate_target(url: str) -> tuple[str, str]:
@@ -515,6 +600,72 @@ def run_check(host: str, pinned_ip: str) -> dict:
         connection.close()
 
 
+def call_gemini(history: list[dict]) -> str:
+    """Send the conversation to the Gemini free-tier API and return
+    the model's reply text. Raises RuntimeError on any failure."""
+    if not GEMINI_API_KEY:
+        raise RuntimeError("not_configured")
+
+    contents = [
+        {"role": turn["role"], "parts": [{"text": turn["text"]}]}
+        for turn in history
+    ]
+
+    body = json.dumps({
+        "contents": contents,
+        "systemInstruction": {"parts": [{"text": CHAT_SYSTEM_PROMPT}]},
+        "generationConfig": {
+            "maxOutputTokens": 500,
+            "temperature": 0.4,
+        },
+    }).encode("utf-8")
+
+    connection = http.client.HTTPSConnection(
+        GEMINI_HOST,
+        timeout=20,
+        context=ssl.create_default_context(),
+    )
+
+    try:
+        connection.request(
+            "POST",
+            f"/v1beta/models/{GEMINI_MODEL}:generateContent",
+            body=body,
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": GEMINI_API_KEY,
+            },
+        )
+
+        response = connection.getresponse()
+        raw = response.read()
+
+        if response.status != 200:
+            raise RuntimeError(f"gemini_http_{response.status}")
+
+        data = json.loads(raw)
+        candidates = data.get("candidates") or []
+
+        if not candidates:
+            raise RuntimeError("gemini_empty")
+
+        parts = candidates[0].get("content", {}).get("parts", [])
+        text = "".join(
+            p.get("text", "") for p in parts if isinstance(p, dict)
+        ).strip()
+
+        if not text:
+            raise RuntimeError("gemini_empty")
+
+        return text
+
+    except (OSError, ssl.SSLError, json.JSONDecodeError, http.client.HTTPException) as error:
+        raise RuntimeError("gemini_network") from error
+
+    finally:
+        connection.close()
+
+
 app.mount(
     "/static",
     StaticFiles(directory="static"),
@@ -534,7 +685,34 @@ def health():
         "status": "ok",
         "scanner": "passive-header-check",
         "demo_mode": DEMO_MODE,
+        "chat_configured": bool(GEMINI_API_KEY),
     }
+
+
+@app.post("/api/chat")
+def chat(data: ChatRequest, request: Request):
+    if not GEMINI_API_KEY:
+        raise HTTPException(
+            503, "AI চ্যাট এখনো কনফিগার করা হয়নি। Render-এ GEMINI_API_KEY সেট করো."
+        )
+
+    check_chat_rate_limit(client_key(request))
+
+    history = [{"role": m.role, "text": m.text} for m in data.messages]
+
+    try:
+        reply = call_gemini(history)
+    except RuntimeError as error:
+        code = str(error)
+        if code == "gemini_http_429":
+            raise HTTPException(
+                429, "AI পরিষেবা এখন ব্যস্ত (ফ্রি কোটা); কিছুক্ষণ পরে চেষ্টা করো."
+            )
+        raise HTTPException(
+            502, "AI থেকে উত্তর পাওয়া যায়নি; আবার চেষ্টা করো."
+        )
+
+    return {"reply": reply}
 
 
 @app.post("/api/scan")
