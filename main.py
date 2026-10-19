@@ -1,6 +1,5 @@
 
 import os
-import json
 import time
 import socket
 import secrets
@@ -19,6 +18,8 @@ from pydantic import BaseModel, Field
 app = FastAPI(title="CyberSentinel AI")
 
 SCAN_TOKEN = os.environ.get("SCAN_TOKEN", "")
+DEMO_MODE = os.environ.get("DEMO_MODE", "true").lower() == "true"
+
 ALLOWED_HOSTS = {
     h.strip().lower().rstrip(".")
     for h in os.environ.get("ALLOWED_HOSTS", "").split(",")
@@ -27,8 +28,11 @@ ALLOWED_HOSTS = {
 
 if not SCAN_TOKEN:
     raise RuntimeError("SCAN_TOKEN environment variable is required")
-if not ALLOWED_HOSTS:
-    raise RuntimeError("ALLOWED_HOSTS must contain your authorized domain")
+
+if not ALLOWED_HOSTS and not DEMO_MODE:
+    raise RuntimeError(
+        "ALLOWED_HOSTS must contain your authorized domain"
+    )
 
 HEADERS_TO_CHECK = {
     "strict-transport-security":
@@ -54,6 +58,12 @@ class ScanRequest(BaseModel):
 
 
 def validate_target(url: str) -> str:
+    if DEMO_MODE:
+        raise HTTPException(
+            403,
+            "Demo mode enabled: scanning is disabled."
+        )
+
     parsed = urlsplit(url.strip())
 
     if parsed.scheme.lower() != "https":
@@ -63,11 +73,15 @@ def validate_target(url: str) -> str:
         raise HTTPException(400, "সঠিক URL দাও।")
 
     if parsed.username or parsed.password:
-        raise HTTPException(400, "URL-এ credentials অনুমোদিত নয়।")
+        raise HTTPException(
+            400, "URL-এ credentials অনুমোদিত নয়।"
+        )
 
     try:
         if parsed.port not in (None, 443):
-            raise HTTPException(400, "শুধু HTTPS port 443 অনুমোদিত।")
+            raise HTTPException(
+                400, "শুধু HTTPS port 443 অনুমোদিত।"
+            )
     except ValueError:
         raise HTTPException(400, "URL-এর port সঠিক নয়।")
 
@@ -81,49 +95,54 @@ def validate_target(url: str) -> str:
             400, "শুধু domain-এর root URL পরীক্ষা করা যাবে।"
         )
 
-    host = (
-    parsed.hostname.encode("idna")
-    .decode("ascii")
-    .lower()
-    .rstrip(".")
-)
+    try:
+        host = (
+            parsed.hostname.encode("idna")
+            .decode("ascii")
+            .lower()
+            .rstrip(".")
+        )
+    except UnicodeError:
+        raise HTTPException(400, "Domain নামটি সঠিক নয়।")
 
-if DEMO_MODE:
-    raise HTTPException(
-        403,
-        "Demo mode enabled: scanning is disabled."
-    )
-    
-if host not in ALLOWED_HOSTS:
-    raise HTTPException(
-        403,
-        "এই domain অনুমোদিত তালিকায় নেই।"
-    )
+    if host not in ALLOWED_HOSTS:
+        raise HTTPException(
+            403, "এই domain অনুমোদিত তালিকায় নেই।"
+        )
 
-    # DNS-এর private, loopback, link-local বা reserved IP ব্লক।
+    # DNS-এর private, loopback, link-local বা
+    # reserved IP ব্লক করা।
     try:
         addresses = socket.getaddrinfo(
             host, 443, type=socket.SOCK_STREAM
         )
+
         if not addresses:
             raise ValueError("No DNS addresses")
 
         for item in addresses:
             ip = ipaddress.ip_address(item[4][0])
+
             if not ip.is_global:
                 raise HTTPException(
-                    403, "Domain non-public IP-তে resolve হয়েছে।"
+                    403,
+                    "Domain non-public IP-তে resolve হয়েছে।"
                 )
+
     except HTTPException:
         raise
     except Exception:
-        raise HTTPException(400, "Domain DNS যাচাই করা যায়নি।")
+        raise HTTPException(
+            400, "Domain DNS যাচাই করা যায়নি।"
+        )
 
     return f"https://{host}/"
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
+    def redirect_request(
+        self, req, fp, code, msg, headers, newurl
+    ):
         return None
 
 
@@ -144,11 +163,14 @@ def run_check(url: str) -> dict:
 
     try:
         response = opener.open(request, timeout=8)
+
     except urllib.error.HTTPError as e:
         if 300 <= e.code < 400:
             return {
                 "target": url,
-                "checked_at": datetime.now(timezone.utc).isoformat(),
+                "checked_at": datetime.now(
+                    timezone.utc
+                ).isoformat(),
                 "status": e.code,
                 "redirect_followed": False,
                 "note": "Redirect অনুসরণ করা হয়নি।",
@@ -162,17 +184,24 @@ def run_check(url: str) -> dict:
 
         for name, advice in HEADERS_TO_CHECK.items():
             present = name in headers
+
             findings.append({
                 "header": name,
                 "present": present,
-                "observed_value": headers.get(name) if present else None,
-                "recommendation": advice if not present else
-                    "Header পাওয়া গেছে; এর মান ও কার্যকারিতা যাচাই করুন.",
+                "observed_value": (
+                    headers.get(name) if present else None
+                ),
+                "recommendation": (
+                    advice if not present else
+                    "Header পাওয়া গেছে; এর মান ও কার্যকারিতা যাচাই করুন।"
+                ),
             })
 
         return {
             "target": url,
-            "checked_at": datetime.now(timezone.utc).isoformat(),
+            "checked_at": datetime.now(
+                timezone.utc
+            ).isoformat(),
             "status": response.status,
             "redirect_followed": False,
             "findings": findings,
@@ -184,7 +213,11 @@ def run_check(url: str) -> dict:
         }
 
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount(
+    "/static",
+    StaticFiles(directory="static"),
+    name="static",
+)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -195,7 +228,11 @@ def home():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "scanner": "passive-header-check"}
+    return {
+        "status": "ok",
+        "scanner": "passive-header-check",
+        "demo_mode": DEMO_MODE,
+    }
 
 
 @app.post("/api/scan")
@@ -210,28 +247,39 @@ def scan(
         raise HTTPException(401, "অনুমোদিত token প্রয়োজন।")
 
     if data.confirm_authorized is not True:
-        raise HTTPException(403, "মালিকের অনুমতি নিশ্চিত করতে হবে।")
+        raise HTTPException(
+            403, "মালিকের অনুমতি নিশ্চিত করতে হবে।"
+        )
 
     target = validate_target(data.url)
 
     with scan_lock:
         now = time.monotonic()
+
         if now - last_scan_time < 15:
             raise HTTPException(
                 429, "নিরাপত্তার জন্য ১৫ সেকেন্ড অপেক্ষা করো।"
             )
+
         last_scan_time = now
 
     try:
         report = run_check(target)
-    except (urllib.error.URLError, TimeoutError, OSError):
-        raise HTTPException(502, "পরীক্ষা ব্যর্থ হয়েছে; ফলাফল নিশ্চিত নয়।")
+    except (
+        urllib.error.URLError,
+        TimeoutError,
+        OSError,
+    ):
+        raise HTTPException(
+            502, "পরীক্ষা ব্যর্থ হয়েছে; ফলাফল নিশ্চিত নয়।"
+        )
 
     audit_log.append({
         "time": datetime.now(timezone.utc).isoformat(),
         "target": target,
         "status": report["status"],
     })
+
     del audit_log[:-100]
 
     return report
@@ -241,4 +289,5 @@ def scan(
 def get_audit(x_scan_token: str = Header(default="")):
     if not secrets.compare_digest(x_scan_token, SCAN_TOKEN):
         raise HTTPException(401, "অনুমোদিত token প্রয়োজন।")
+
     return {"events": audit_log}
