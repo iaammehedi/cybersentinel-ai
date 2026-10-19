@@ -1,1 +1,283 @@
 
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#000000">
+<title>Settings | CyberSentinel AI</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg:#000000;
+  --panel:#101010;
+  --line:#292929;
+  --accent:#40E0C0;
+  --text:#F5F7FA;
+  --muted:#9CA3AF;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  font:15px/1.6 system-ui,sans-serif;
+}
+button,select { font:inherit; }
+button,a { -webkit-tap-highlight-color:transparent; }
+.layout { min-height:100vh; }
+.sidebar {
+  background:var(--panel); border-color:var(--line);
+  padding:18px; display:flex; flex-direction:column; gap:16px;
+}
+.brand { color:var(--text); font-weight:750; font-size:18px; }
+.brand span { color:var(--accent); }
+.nav { display:flex; gap:8px; flex-wrap:wrap; }
+.nav a {
+  color:var(--muted); text-decoration:none; padding:9px 12px;
+  border-radius:9px; display:block;
+}
+.nav a.active,.nav a:hover {
+  background:color-mix(in srgb,var(--accent) 12%,var(--panel));
+  color:var(--accent);
+}
+main { width:min(760px,100%); margin:auto; padding:24px 18px 40px; }
+h1 { font-size:27px; margin:0; }
+h2 { font-size:17px; margin:0 0 5px; }
+p { color:var(--muted); margin:5px 0 14px; }
+.section {
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:15px; padding:17px; margin-top:16px;
+}
+.options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.option {
+  background:var(--bg); color:var(--text); border:1px solid var(--line);
+  border-radius:11px; padding:12px; text-align:left; cursor:pointer;
+  min-height:65px;
+}
+.option.selected {
+  border-color:var(--accent);
+  box-shadow:inset 0 0 0 1px var(--accent);
+}
+.swatch { display:inline-block; width:13px; height:13px; border-radius:50%; margin-right:7px; vertical-align:-2px; }
+select {
+  width:100%; padding:12px; border-radius:9px;
+  border:1px solid var(--line); background:var(--bg); color:var(--text);
+}
+.note { font-size:12px; }
+.actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+.primary {
+  background:var(--accent); color:#001612; border:0;
+  padding:11px 15px; border-radius:9px; font-weight:700; cursor:pointer;
+}
+.secondary {
+  background:var(--bg); color:var(--text); border:1px solid var(--line);
+  padding:11px 15px; border-radius:9px; cursor:pointer;
+}
+#status { color:var(--accent); min-height:24px; }
+@media(min-width:760px) {
+  .layout.vertical { display:grid; grid-template-columns:235px minmax(0,1fr); }
+  .layout.vertical .sidebar {
+    border-right:1px solid var(--line); min-height:100vh;
+  }
+  .layout.vertical .nav { flex-direction:column; }
+  .layout.vertical main { width:min(760px,100%); }
+  .layout.horizontal .sidebar {
+    border-bottom:1px solid var(--line);
+    flex-direction:row; align-items:center; justify-content:space-between;
+    padding:12px 22px;
+  }
+  .layout.horizontal .nav { justify-content:flex-end; }
+}
+@media(max-width:759px) {
+  .sidebar { border-bottom:1px solid var(--line); }
+  .layout.vertical .nav { flex-direction:column; }
+  .layout.horizontal .nav { flex-direction:row; }
+  main { padding:20px 14px 32px; }
+}
+</style>
+</head>
+<body>
+<div class="layout vertical" id="layout">
+  <aside class="sidebar">
+    <div class="brand">🛡️ CyberSentinel<span> AI</span></div>
+    <nav class="nav" aria-label="Main menu">
+      <a href="/" id="navChat">◈ Chat</a>
+      <a href="/#scanner" id="navScanner">⌕ Scanner</a>
+      <a href="/#reports" id="navReports">▤ Reports</a>
+      <a href="/settings.html" class="active" id="navSettings">⚙ Settings</a>
+    </nav>
+  </aside>
+
+  <main>
+    <h1 id="pageTitle">সেটিংস</h1>
+    <p id="pageDesc">তোমার পছন্দ অনুযায়ী CyberSentinel AI সাজিয়ে নাও।</p>
+
+    <section class="section">
+      <h2 id="themeTitle">রঙের থিম</h2>
+      <p id="themeDesc">তোমার পছন্দের ইন্টারফেস বেছে নাও।</p>
+      <div class="options" id="themes">
+        <button class="option" data-theme="deep">
+          <span class="swatch" style="background:#000000;border:1px solid #555"></span>Pure Deep Black
+        </button>
+        <button class="option" data-theme="midnight">
+          <span class="swatch" style="background:#101a2b"></span>Midnight
+        </button>
+        <button class="option" data-theme="matrix">
+          <span class="swatch" style="background:#39ff14"></span>Matrix
+        </button>
+        <button class="option" data-theme="purple">
+          <span class="swatch" style="background:#a78bfa"></span>Cyber Purple
+        </button>
+        <button class="option" data-theme="light">
+          <span class="swatch" style="background:#f4f6fa;border:1px solid #aaa"></span>Light
+        </button>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 id="layoutTitle">মেনুর অবস্থান</h2>
+      <p id="layoutDesc">সাইডবার অথবা উপরের মেনু বেছে নাও।</p>
+      <div class="options">
+        <button class="option" data-layout="vertical" id="verticalOption">▥ Vertical — Sidebar</button>
+        <button class="option" data-layout="horizontal" id="horizontalOption">▤ Horizontal — Top bar</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 id="langTitle">ভাষা</h2>
+      <p id="langDesc">ইন্টারফেসের ভাষা নির্বাচন করো।</p>
+      <select id="language">
+        <option value="bn">বাংলা</option>
+        <option value="en">English</option>
+      </select>
+    </section>
+
+    <section class="section">
+      <h2 id="savedTitle">তোমার পছন্দ</h2>
+      <p id="savedDesc">এই ব্রাউজারে থিম, মেনু ও ভাষার পছন্দ সংরক্ষিত থাকবে। অন্য ব্রাউজার বা ডিভাইসে এগুলো স্বয়ংক্রিয়ভাবে আসবে না।</p>
+      <div class="actions">
+        <button class="primary" id="save">সেটিংস সংরক্ষণ</button>
+        <button class="secondary" id="reset">ডিফল্টে ফিরিয়ে নাও</button>
+      </div>
+      <p id="status" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+</div>
+
+<script>
+const defaults = {theme:"deep",layout:"vertical",language:"bn"};
+const themes = {
+  deep:{bg:"#000000",panel:"#101010",line:"#292929",accent:"#40E0C0",text:"#F5F7FA",muted:"#9CA3AF"},
+  midnight:{bg:"#0B1120",panel:"#141E30",line:"#2C3B50",accent:"#38D9C0",text:"#EEF5FF",muted:"#9CAC C3".replace(" ","")},
+  matrix:{bg:"#020602",panel:"#091109",line:"#203520",accent:"#39FF14",text:"#E9FFE7",muted:"#9BB49A"},
+  purple:{bg:"#0B0812",panel:"#15101F",line:"#352745",accent:"#A78BFA",text:"#F5F0FF",muted:"#B8AACB"},
+  light:{bg:"#F4F6FA",panel:"#FFFFFF",line:"#D9E0EA",accent:"#147D71",text:"#152033",muted:"#5C6B7E"}
+};
+let prefs = {...defaults};
+
+const copy = {
+ bn:{
+  pageTitle:"সেটিংস",pageDesc:"তোমার পছন্দ অনুযায়ী CyberSentinel AI সাজিয়ে নাও।",
+  themeTitle:"রঙের থিম",themeDesc:"তোমার পছন্দের ইন্টারফেস বেছে নাও।",
+  layoutTitle:"মেনুর অবস্থান",layoutDesc:"সাইডবার অথবা উপরের মেনু বেছে নাও।",
+  verticalOption:"▥ Vertical — সাইডবার",horizontalOption:"▤ Horizontal — উপরের বার",
+  langTitle:"ভাষা",langDesc:"ইন্টারফেসের ভাষা নির্বাচন করো।",
+  savedTitle:"তোমার পছন্দ",savedDesc:"এই ব্রাউজারে থিম, মেনু ও ভাষার পছন্দ সংরক্ষিত থাকবে। অন্য ব্রাউজার বা ডিভাইসে এগুলো স্বয়ংক্রিয়ভাবে আসবে না।",
+  save:"সেটিংস সংরক্ষণ",reset:"ডিফল্টে ফিরিয়ে নাও",success:"সেটিংস সংরক্ষিত হয়েছে।",
+  resetDone:"ডিফল্ট সেটিংস ফিরিয়ে আনা হয়েছে।",error:"সেটিংস সংরক্ষণ করা যায়নি। ব্রাউজার storage অনুমতি পরীক্ষা করো।",
+  navChat:"◈ চ্যাট",navScanner:"⌕ স্ক্যানার",navReports:"▤ রিপোর্ট",navSettings:"⚙ সেটিংস"
+ },
+ en:{
+  pageTitle:"Settings",pageDesc:"Customize your CyberSentinel AI workspace.",
+  themeTitle:"Color theme",themeDesc:"Choose your preferred interface.",
+  layoutTitle:"Menu layout",layoutDesc:"Choose a sidebar or top navigation bar.",
+  verticalOption:"▥ Vertical — Sidebar",horizontalOption:"▤ Horizontal — Top bar",
+  langTitle:"Language",langDesc:"Choose the interface language.",
+  savedTitle:"Your preferences",savedDesc:"Theme, layout and language are saved in this browser only. They do not automatically sync to other devices.",
+  save:"Save settings",reset:"Reset to defaults",success:"Settings saved.",
+  resetDone:"Default settings restored.",error:"Could not save settings. Check browser storage permissions.",
+  navChat:"◈ Chat",navScanner:"⌕ Scanner",navReports:"▤ Reports",navSettings:"⚙ Settings"
+ }
+};
+
+function applyTheme(name) {
+  const theme = themes[name] || themes.deep;
+  Object.entries(theme).forEach(([key,value]) => {
+    document.documentElement.style.setProperty("--"+key,value);
+  });
+}
+function paintSelections() {
+  document.querySelectorAll("[data-theme]").forEach(button => {
+    button.classList.toggle("selected",button.dataset.theme === prefs.theme);
+    button.setAttribute("aria-pressed",String(button.dataset.theme === prefs.theme));
+  });
+  document.querySelectorAll("[data-layout]").forEach(button => {
+    button.classList.toggle("selected",button.dataset.layout === prefs.layout);
+    button.setAttribute("aria-pressed",String(button.dataset.layout === prefs.layout));
+  });
+}
+function applyLanguage() {
+  const c = copy[prefs.language];
+  document.documentElement.lang = prefs.language;
+  Object.keys(c).forEach(key => {
+    const el = document.getElementById(key);
+    if (el) el.textContent = c[key];
+  });
+  document.getElementById("language").value = prefs.language;
+}
+function applyLayout() {
+  document.getElementById("layout").className = "layout "+prefs.layout;
+}
+function render() {
+  applyTheme(prefs.theme);
+  applyLayout();
+  applyLanguage();
+  paintSelections();
+}
+function loadPrefs() {
+  try {
+    const stored = localStorage.getItem("cybersentinel.preferences");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (themes[parsed.theme]) prefs.theme = parsed.theme;
+      if (["vertical","horizontal"].includes(parsed.layout)) prefs.layout = parsed.layout;
+      if (["bn","en"].includes(parsed.language)) prefs.language = parsed.language;
+    }
+  } catch (_) {}
+  render();
+}
+function savePrefs() {
+  try {
+    localStorage.setItem("cybersentinel.preferences",JSON.stringify(prefs));
+    document.getElementById("status").textContent = copy[prefs.language].success;
+  } catch (_) {
+    document.getElementById("status").textContent = copy[prefs.language].error;
+  }
+}
+document.querySelectorAll("[data-theme]").forEach(button => {
+  button.addEventListener("click",() => {
+    prefs.theme = button.dataset.theme;
+    render();
+  });
+});
+document.querySelectorAll("[data-layout]").forEach(button => {
+  button.addEventListener("click",() => {
+    prefs.layout = button.dataset.layout;
+    render();
+  });
+});
+document.getElementById("language").addEventListener("change",event => {
+  prefs.language = event.target.value;
+  render();
+});
+document.getElementById("save").addEventListener("click",savePrefs);
+document.getElementById("reset").addEventListener("click",() => {
+  prefs = {...defaults};
+  render();
+  savePrefs();
+  document.getElementById("status").textContent = copy[prefs.language].resetDone;
+});
+loadPrefs();
+</script>
+</body>
+</html>
+
