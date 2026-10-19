@@ -93,7 +93,7 @@ if DEMO_MODE:
         403,
         "Demo mode enabled: scanning is disabled."
     )
-
+    
 if host not in ALLOWED_HOSTS:
     raise HTTPException(
         403,
