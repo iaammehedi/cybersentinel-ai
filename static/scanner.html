@@ -449,3 +449,412 @@ pre {
       <div class="top-left">
         <button class="menu-button" id="menuButton"
                 type="button" aria-label="Open menu"
+                aria-controls="sidebar" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" aria-hidden="true">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+
+        <div class="top-heading">
+          <h1 id="title">ওয়েবসাইট Scanner</h1>
+          <div class="muted small" id="subtitle">
+            নিরাপদ ওয়েবসাইট পরীক্ষা
+          </div>
+        </div>
+      </div>
+
+      <button class="language-button" id="languageButton"
+              type="button">English</button>
+    </header>
+
+    <section class="panel">
+      <h2 id="introTitle">ওয়েবসাইট Scanner</h2>
+      <p id="intro">
+        শুধু নিজের বা লিখিত অনুমতিপ্রাপ্ত ওয়েবসাইট পরীক্ষা করো।
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2 id="formTitle">অনুমোদিত HTTPS পরীক্ষা</h2>
+      <p id="formHelp">
+        এই টুল সীমিত HTTPS status ও security headers পরীক্ষা করার জন্য।
+      </p>
+
+      <form id="scanForm">
+        <label for="token" id="tokenLabel">Private scan token</label>
+        <input id="token" type="password"
+               autocomplete="off" required>
+
+        <label for="target" id="targetLabel">
+          ওয়েবসাইটের HTTPS URL
+        </label>
+        <input id="target" type="url"
+               placeholder="https://your-domain.example"
+               required>
+
+        <label class="check">
+          <input id="consent" type="checkbox" required>
+          <span id="consentText">
+            আমি এই ওয়েবসাইট পরীক্ষা করার অনুমতি পেয়েছি।
+          </span>
+        </label>
+
+        <div class="actions">
+          <button class="primary" id="scan" type="submit">
+            নিরাপত্তা পরীক্ষা চালাও
+          </button>
+        </div>
+      </form>
+
+      <p id="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="panel">
+      <h2 id="reportTitle">পরীক্ষার ফলাফল</h2>
+      <pre id="report">এখনো কোনো পরীক্ষা চালানো হয়নি।</pre>
+      <button class="primary" id="download"
+              type="button" disabled>
+        JSON রিপোর্ট ডাউনলোড
+      </button>
+    </section>
+
+    <p class="small muted" id="notice">
+      এটি সীমিত passive checker; পূর্ণাঙ্গ vulnerability scanner নয়।
+    </p>
+  </main>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const defaults = {
+  theme:"deep",
+  layout:"vertical",
+  language:"bn"
+};
+
+const themes = {
+  deep:{
+    bg:"#000000",panel:"#101010",line:"#292929",
+    accent:"#40E0C0",text:"#F5F7FA",muted:"#9CA3AF"
+  },
+  midnight:{
+    bg:"#0B1120",panel:"#141E30",line:"#2C3B50",
+    accent:"#38D9C0",text:"#EEF5FF",muted:"#9CACC3"
+  },
+  matrix:{
+    bg:"#020602",panel:"#091109",line:"#203520",
+    accent:"#39FF14",text:"#E9FFE7",muted:"#9BB49A"
+  },
+  purple:{
+    bg:"#0B0812",panel:"#15101F",line:"#352745",
+    accent:"#A78BFA",text:"#F5F0FF",muted:"#B8AACB"
+  },
+  light:{
+    bg:"#F4F6FA",panel:"#FFFFFF",line:"#D9E0EA",
+    accent:"#147D71",text:"#152033",muted:"#5C6B7E"
+  }
+};
+
+const words = {
+  bn:{
+    title:"ওয়েবসাইট Scanner",
+    subtitle:"নিরাপদ ওয়েবসাইট পরীক্ষা",
+    introTitle:"ওয়েবসাইট Scanner",
+    intro:"শুধু নিজের বা লিখিত অনুমতিপ্রাপ্ত ওয়েবসাইট পরীক্ষা করো।",
+    formTitle:"অনুমোদিত HTTPS পরীক্ষা",
+    formHelp:"এই টুল সীমিত HTTPS status ও security headers পরীক্ষা করার জন্য।",
+    tokenLabel:"Private scan token",
+    targetLabel:"ওয়েবসাইটের HTTPS URL",
+    consentText:"আমি এই ওয়েবসাইট পরীক্ষা করার অনুমতি পেয়েছি।",
+    scan:"নিরাপত্তা পরীক্ষা চালাও",
+    scanning:"পরীক্ষা চলছে...",
+    reportTitle:"পরীক্ষার ফলাফল",
+    empty:"এখনো কোনো পরীক্ষা চালানো হয়নি।",
+    notice:"এটি সীমিত passive checker; পূর্ণাঙ্গ vulnerability scanner নয়।",
+    success:"Backend থেকে ফলাফল পাওয়া গেছে।",
+    error:"পরীক্ষা ব্যর্থ",
+    download:"JSON রিপোর্ট ডাউনলোড",
+    chat:"চ্যাট",
+    scanner:"স্ক্যানার",
+    reports:"রিপোর্ট",
+    history:"ইতিহাস",
+    settings:"সেটিংস",
+    sideNote:"শুধু অনুমোদিত ওয়েবসাইট পরীক্ষা করো।",
+    language:"English"
+  },
+  en:{
+    title:"Website Scanner",
+    subtitle:"Website security checker",
+    introTitle:"Website Scanner",
+    intro:"Only test websites you own or are explicitly authorized to assess.",
+    formTitle:"Authorized HTTPS check",
+    formHelp:"This tool performs limited HTTPS status and security-header checks.",
+    tokenLabel:"Private scan token",
+    targetLabel:"Website HTTPS URL",
+    consentText:"I am authorized to test this website.",
+    scan:"Run security check",
+    scanning:"Checking...",
+    reportTitle:"Scan results",
+    empty:"No scan has been run yet.",
+    notice:"This is a limited passive checker, not a full vulnerability scanner.",
+    success:"Results received from backend.",
+    error:"Scan failed",
+    download:"Download JSON report",
+    chat:"Chat",
+    scanner:"Scanner",
+    reports:"Reports",
+    history:"History",
+    settings:"Settings",
+    sideNote:"Only test authorized websites.",
+    language:"বাংলা"
+  }
+};
+
+let prefs = {...defaults};
+let lastReport = null;
+let busy = false;
+
+function loadPrefs() {
+  try {
+    const p = JSON.parse(
+      localStorage.getItem("cybersentinel.preferences") || "{}"
+    );
+
+    if (themes[p.theme]) prefs.theme = p.theme;
+
+    if (["vertical","horizontal"].includes(p.layout)) {
+      prefs.layout = p.layout;
+    }
+
+    if (["bn","en"].includes(p.language)) {
+      prefs.language = p.language;
+    }
+  } catch (_) {}
+}
+
+function savePrefs() {
+  try {
+    const old = JSON.parse(
+      localStorage.getItem("cybersentinel.preferences") || "{}"
+    );
+
+    localStorage.setItem(
+      "cybersentinel.preferences",
+      JSON.stringify({...old, ...prefs})
+    );
+  } catch (_) {}
+}
+
+function renderPrefs() {
+  const theme = themes[prefs.theme] || themes.deep;
+
+  Object.entries(theme).forEach(([key,value]) => {
+    document.documentElement.style.setProperty("--" + key,value);
+  });
+
+  $("layout").className = "layout " + prefs.layout;
+  document.documentElement.lang = prefs.language;
+
+  const t = words[prefs.language];
+
+  $("title").textContent = t.title;
+  $("subtitle").textContent = t.subtitle;
+  $("introTitle").textContent = t.introTitle;
+  $("intro").textContent = t.intro;
+  $("formTitle").textContent = t.formTitle;
+  $("formHelp").textContent = t.formHelp;
+  $("tokenLabel").textContent = t.tokenLabel;
+  $("targetLabel").textContent = t.targetLabel;
+  $("consentText").textContent = t.consentText;
+  $("reportTitle").textContent = t.reportTitle;
+  $("notice").textContent = t.notice;
+  $("download").textContent = t.download;
+  $("sideNote").textContent = t.sideNote;
+
+  $("chatText").textContent = t.chat;
+  $("scannerText").textContent = t.scanner;
+  $("reportsText").textContent = t.reports;
+  $("historyText").textContent = t.history;
+  $("settingsText").textContent = t.settings;
+
+  $("languageButton").textContent = t.language;
+  $("scan").textContent = busy ? t.scanning : t.scan;
+}
+
+function closeMenu() {
+  document.body.classList.remove("menu-open");
+  $("menuButton").setAttribute("aria-expanded","false");
+  $("menuButton").setAttribute("aria-label","Open menu");
+}
+
+function toggleMenu() {
+  const open = !document.body.classList.contains("menu-open");
+
+  document.body.classList.toggle("menu-open",open);
+  $("menuButton").setAttribute("aria-expanded",String(open));
+  $("menuButton").setAttribute(
+    "aria-label",open ? "Close menu" : "Open menu"
+  );
+}
+
+$("menuButton").addEventListener("click",toggleMenu);
+$("overlay").addEventListener("click",closeMenu);
+
+document.querySelectorAll(".nav a").forEach(link => {
+  link.addEventListener("click",closeMenu);
+});
+
+document.addEventListener("keydown",event => {
+  if (event.key === "Escape") closeMenu();
+});
+
+window.addEventListener("resize",() => {
+  if (window.innerWidth >= 760) closeMenu();
+});
+
+$("languageButton").addEventListener("click",() => {
+  prefs.language = prefs.language === "bn" ? "en" : "bn";
+  savePrefs();
+  renderPrefs();
+});
+
+function buildSecuritySummary(data) {
+  const findings = Array.isArray(data.findings)
+    ? data.findings
+    : [];
+
+  const present = findings.filter(item => item.present).length;
+  const missing = findings.filter(item => !item.present);
+
+  return {
+    title:"Security Header Summary",
+    score:findings.length
+      ? Math.round((present / findings.length) * 100)
+      : null,
+    score_note:"এটি শুধু পরীক্ষিত security header-এর উপস্থিতির স্কোর।",
+    headers_checked:findings.length,
+    headers_present:present,
+    headers_missing:missing.map(item => ({
+      header:item.header,
+      recommendation:item.recommendation
+    }))
+  };
+}
+
+$("scanForm").addEventListener("submit",async event => {
+  event.preventDefault();
+
+  if (busy) return;
+
+  const token = $("token").value;
+  const url = $("target").value.trim();
+  const consent = $("consent").checked;
+
+  if (!consent) return;
+
+  busy = true;
+  $("scan").disabled = true;
+  $("download").disabled = true;
+  $("status").textContent = words[prefs.language].scanning;
+  $("report").textContent = "";
+  renderPrefs();
+
+  try {
+    const response = await fetch("/api/scan",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "X-Scan-Token":token
+      },
+      body:JSON.stringify({
+        url,
+        confirm_authorized:consent
+      })
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const detail = typeof data.detail === "string"
+        ? data.detail
+        : JSON.stringify(data.detail || data || {});
+
+      throw new Error(detail || "HTTP " + response.status);
+    }
+
+    const displayReport = {
+      ...data,
+      security_summary:buildSecuritySummary(data)
+    };
+
+    lastReport = displayReport;
+
+    $("report").textContent =
+      JSON.stringify(displayReport,null,2);
+
+    $("status").textContent = words[prefs.language].success;
+    $("download").disabled = false;
+
+    try {
+      const history = JSON.parse(
+        localStorage.getItem("cybersentinel.history") || "[]"
+      );
+
+      history.unshift({
+        title:url,
+        date:new Date().toLocaleString(),
+        report:displayReport
+      });
+
+      localStorage.setItem(
+        "cybersentinel.history",
+        JSON.stringify(history.slice(0,50))
+      );
+    } catch (error) {
+      console.error("History save failed:",error);
+    }
+
+  } catch (error) {
+    $("status").textContent =
+      words[prefs.language].error + ": " + error.message;
+
+    $("report").textContent = JSON.stringify({
+      error:error.message
+    },null,2);
+
+  } finally {
+    busy = false;
+    $("scan").disabled = false;
+    renderPrefs();
+  }
+});
+
+$("download").addEventListener("click",() => {
+  if (!lastReport) return;
+
+  const blob = new Blob(
+    [JSON.stringify(lastReport,null,2)],
+    {type:"application/json"}
+  );
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+
+  a.href = url;
+  a.download = "cybersentinel-report.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  setTimeout(() => URL.revokeObjectURL(url),1000);
+});
+
+loadPrefs();
+renderPrefs();
+</script>
+
+</body>
+</html>
