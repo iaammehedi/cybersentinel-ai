@@ -9,18 +9,45 @@
 <link rel="stylesheet" href="/static/shared.css">
 <script src="/static/shared.js"></script>
 <style>
-.chat{display:flex;flex-direction:column;gap:10px;max-height:430px;overflow:auto;margin:15px 0}
-.message{border:1px solid var(--line);border-radius:12px;padding:12px;overflow-wrap:anywhere}
-.message.user{border-color:var(--muted)}
-.message.typing{color:var(--muted)}
-.message strong{display:block;margin-bottom:5px}
-textarea{display:block;width:100%;min-height:120px;padding:12px;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:10px;resize:vertical;font:inherit}
-textarea:focus-visible{outline:2px solid var(--text);outline-offset:3px}
-.quicklinks{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-top:16px}
-.quicklinks a{display:flex;flex-direction:column;gap:8px;min-width:0;padding:15px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
-.quicklinks a:hover{border-color:var(--muted)}
-.quick-title{display:flex;align-items:center;gap:10px;font-weight:700}
-footer{color:var(--muted);font-size:12px;padding:8px 0}
+/* Gemini-style minimal chat layout (this page only) */
+body[data-page="chat"] main{display:flex;flex-direction:column;min-height:100dvh;max-width:760px;padding-bottom:10px}
+body[data-page="chat"] .topbar{margin-bottom:4px}
+.top-actions{display:flex;align-items:center;gap:8px}
+.icon-btn{width:40px;height:40px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:transparent;border:1px solid transparent}
+.icon-btn:hover{background:var(--panel);border-color:var(--line)}
+.icon-btn .icon{width:20px;height:20px;flex:0 0 20px}
+
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;padding:30px 10px;min-height:42vh}
+.empty-icon{width:38px;height:38px;margin-bottom:8px;color:var(--accent)}
+.empty-state h2{font-size:26px;margin:4px 0 2px}
+.empty-state p{margin:0 0 14px;max-width:360px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:480px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:9px 15px;background:var(--panel);color:var(--text);font-size:13px;cursor:pointer}
+.chip:hover{border-color:var(--muted)}
+.chip:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+
+.chat{flex:1;display:flex;flex-direction:column;gap:16px;padding:10px 2px 16px}
+.bubble-row{display:flex}
+.bubble-row.user{justify-content:flex-end}
+.bubble{max-width:85%;overflow-wrap:anywhere;white-space:pre-wrap;line-height:1.55}
+.bubble.user{background:var(--panel);border:1px solid var(--line);border-radius:18px 18px 4px 18px;padding:11px 15px}
+.bubble.assistant{padding:2px 2px;color:var(--text)}
+.typing-dots{display:inline-flex;gap:4px;padding:6px 2px}
+.typing-dots span{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:cs-blink 1.2s infinite ease-in-out}
+.typing-dots span:nth-child(2){animation-delay:.2s}
+.typing-dots span:nth-child(3){animation-delay:.4s}
+@keyframes cs-blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+
+.composer{position:sticky;bottom:0;background:var(--bg);padding:8px 0 4px}
+#chatForm{display:flex;align-items:flex-end;gap:8px;border:1px solid var(--line);border-radius:26px;background:var(--panel);padding:8px 8px 8px 18px}
+#prompt{flex:1;border:0;background:transparent;resize:none;max-height:140px;padding:8px 0;color:var(--text);font:inherit;outline:none}
+.send-btn{flex:0 0 auto;width:40px;height:40px;border-radius:50%;background:var(--text);color:var(--bg);border:0;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.send-btn:disabled{opacity:.4;cursor:not-allowed}
+.send-btn .icon{stroke:currentColor;width:18px;height:18px}
+.spin{animation:cs-spin .8s linear infinite}
+@keyframes cs-spin{to{transform:rotate(360deg)}}
+.disclaimer{text-align:center;font-size:11px;color:var(--muted);margin:8px 2px 0}
+#status{min-height:18px;text-align:center}
 </style>
 </head>
 <body data-page="chat">
@@ -28,71 +55,41 @@ footer{color:var(--muted);font-size:12px;padding:8px 0}
   <main>
     <header class="topbar">
       <div class="top-left">
-        <div>
-          <h1 data-i="pageTitle">চ্যাট</h1>
-          <div class="muted small" data-i="subtitle">নিরাপদ ওয়েবসাইট বিশ্লেষণ সহকারী</div>
+        <div class="top-heading">
+          <h1 data-i="pageTitle">Chat</h1>
         </div>
+      </div>
+      <div class="top-actions">
+        <button id="newChatButton" class="icon-btn" type="button" aria-label="New chat">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <button class="language-button" id="languageButton" type="button"></button>
       </div>
     </header>
 
-    <section class="panel">
-      <h2 data-i="welcomeTitle">CyberSentinel AI-তে স্বাগতম</h2>
-      <p data-i="welcomeText">এই চ্যাট একটি সীমিত AI সহকারী — শুধু website security, header ও Scanner-এর ফলাফল নিয়ে সাহায্য করে। স্ক্যান চালাতে Scanner পেজ ব্যবহার করো।</p>
-      <div class="quicklinks">
-        <a href="/static/scanner.html">
-          <div class="quick-title">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H5a2 2 0 0 0-2 2v5"/><path d="M14 3h5a2 2 0 0 1 2 2v5"/><path d="M3 14v5a2 2 0 0 0 2 2h5"/><path d="M14 21h5a2 2 0 0 0 2-2v-5"/><circle cx="10.5" cy="10.5" r="4"/><path d="m13.5 13.5 4 4"/></svg>
-            <span data-i="scanner">স্ক্যানার</span>
-          </div>
-          <div class="muted small" data-i="scannerDesc">অনুমোদিত HTTPS header পরীক্ষা</div>
-        </a>
-        <a href="/static/reports.html">
-          <div class="quick-title">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5"/><path d="M4 19h17"/><path d="m7 14 4-4 3 3 6-7"/></svg>
-            <span data-i="reports">রিপোর্ট</span>
-          </div>
-          <div class="muted small" data-i="reportsDesc">নিরাপত্তা রিপোর্ট দেখো</div>
-        </a>
-        <a href="/static/history.html">
-          <div class="quick-title">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>
-            <span data-i="history">ইতিহাস</span>
-          </div>
-          <div class="muted small" data-i="historyDesc">আগের ফলাফল দেখো</div>
-        </a>
-        <a href="/static/settings.html">
-          <div class="quick-title">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.6a8 8 0 0 1-1.7 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.7-1l-1.7.6-1.4-2.4L7.3 15a8 8 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.6a8 8 0 0 1 1.7-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.7 1l1.7-.6 1.4 2.4-1.4 1.1a8 8 0 0 1-.1 2z"/></svg>
-            <span data-i="settings">সেটিংস</span>
-          </div>
-          <div class="muted small" data-i="settingsDesc">ভাষা ও থিমের সেটিংস</div>
-        </a>
-      </div>
-    </section>
+    <div id="emptyState" class="empty-state">
+      <svg class="empty-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2L12 2z"/>
+      </svg>
+      <h2 data-i="greeting">কী জানতে চাও?</h2>
+      <p class="muted" data-i="greetingSub">website security, header অথবা Scanner-এর ফলাফল নিয়ে প্রশ্ন করো</p>
+      <div class="chips" id="chips"></div>
+    </div>
 
-    <section class="panel">
-      <h2 data-i="chatTitle">তোমার প্রশ্ন লিখো</h2>
-      <div class="chat" id="chat" aria-live="polite"></div>
+    <div class="chat hidden" id="chat" aria-live="polite"></div>
 
-      <label for="prompt" data-i="promptLabel">তোমার প্রশ্ন</label>
-      <textarea id="prompt" data-ph="placeholder"></textarea>
-
-      <div class="actions">
-        <button id="sendButton" type="button" class="primary">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-          <span data-i="send">পাঠাও</span>
+    <div class="composer">
+      <form id="chatForm">
+        <textarea id="prompt" rows="1" data-ph="placeholder"></textarea>
+        <button id="sendButton" class="send-btn" type="submit" aria-label="Send">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 19V5"/><path d="m5 12 7-7 7 7"/>
+          </svg>
         </button>
-        <button id="clearButton" type="button">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
-          <span data-i="clear">চ্যাট পরিষ্কার</span>
-        </button>
-      </div>
-
-      <p class="muted small" data-i="notice">এই সহকারী শুধু website security বিষয়ে কথা বলে; এটি নিজে কোনো স্ক্যান চালায় না এবং exploit বা attack সংক্রান্ত সাহায্য দেয় না।</p>
+      </form>
       <p id="status" role="status" aria-live="polite"></p>
-    </section>
-
-    <footer data-i="footer">CyberSentinel AI — সীমিত passive security checker। শুধু অনুমতিপ্রাপ্ত সিস্টেম পরীক্ষা করো।</footer>
+      <p class="disclaimer" data-i="disclaimer">এই সহকারী শুধু website security বিষয়ে সাহায্য করে এবং exploit/attack সংক্রান্ত সাহায্য দেয় না।</p>
+    </div>
   </main>
 </div>
 
@@ -102,20 +99,14 @@ const $ = id => document.getElementById(id);
 
 const DICT = {
   bn: {
-    pageTitle:"চ্যাট", subtitle:"নিরাপদ ওয়েবসাইট বিশ্লেষণ সহকারী",
-    welcomeTitle:"CyberSentinel AI-তে স্বাগতম",
-    welcomeText:"এই চ্যাট একটি সীমিত AI সহকারী — শুধু website security, header ও Scanner-এর ফলাফল নিয়ে সাহায্য করে। স্ক্যান চালাতে Scanner পেজ ব্যবহার করো।",
-    scanner:"স্ক্যানার", reports:"রিপোর্ট", history:"ইতিহাস", settings:"সেটিংস",
-    scannerDesc:"অনুমোদিত HTTPS header পরীক্ষা", reportsDesc:"নিরাপত্তা রিপোর্ট দেখো",
-    historyDesc:"আগের ফলাফল দেখো", settingsDesc:"ভাষা ও থিমের সেটিংস",
-    chatTitle:"তোমার প্রশ্ন লিখো", promptLabel:"তোমার প্রশ্ন",
-    placeholder:"যেমন: HSTS header কী এবং কেন দরকার?",
-    send:"পাঠাও", sending:"পাঠানো হচ্ছে...", clear:"চ্যাট পরিষ্কার",
-    notice:"এই সহকারী শুধু website security বিষয়ে কথা বলে; এটি নিজে কোনো স্ক্যান চালায় না এবং exploit বা attack সংক্রান্ত সাহায্য দেয় না।",
-    footer:"CyberSentinel AI — সীমিত passive security checker। শুধু অনুমতিপ্রাপ্ত সিস্টেম পরীক্ষা করো।",
+    pageTitle:"Chat",
+    greeting:"কী জানতে চাও?",
+    greetingSub:"website security, header অথবা Scanner-এর ফলাফল নিয়ে প্রশ্ন করো",
+    placeholder:"একটি প্রশ্ন লেখো...",
+    disclaimer:"এই সহকারী শুধু website security বিষয়ে সাহায্য করে এবং exploit/attack সংক্রান্ত সাহায্য দেয় না।",
     empty:"প্রথমে তোমার প্রশ্ন লিখো।",
-    cleared:"চ্যাট পরিষ্কার করা হয়েছে।",
-    first:"আমি CyberSentinel AI-এর সহকারী। website security, security header, অথবা Scanner-এর ফলাফল নিয়ে প্রশ্ন করতে পারো।",
+    newChat:"নতুন চ্যাট",
+    send:"পাঠাও",
     thinking:"ভাবছে...",
     user:"তুমি", assistant:"CyberSentinel",
     notConfigured:"AI চ্যাট এখনো চালু করা হয়নি। Render-এ GEMINI_API_KEY সেট করতে হবে।",
@@ -124,20 +115,14 @@ const DICT = {
     network:"ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করো।"
   },
   en: {
-    pageTitle:"Chat", subtitle:"Website security assistant",
-    welcomeTitle:"Welcome to CyberSentinel AI",
-    welcomeText:"This chat is a scoped AI assistant — it only helps with website security, headers and Scanner results. Use the Scanner page to run a check.",
-    scanner:"Scanner", reports:"Reports", history:"History", settings:"Settings",
-    scannerDesc:"Authorized HTTPS header check", reportsDesc:"View security reports",
-    historyDesc:"View previous results", settingsDesc:"Language and theme settings",
-    chatTitle:"Ask your question", promptLabel:"Your question",
-    placeholder:"e.g. What is the HSTS header and why does it matter?",
-    send:"Send", sending:"Sending...", clear:"Clear chat",
-    notice:"This assistant only discusses website security; it does not run scans itself and will not help with exploits or attacks.",
-    footer:"CyberSentinel AI — limited passive security checker. Test authorized systems only.",
+    pageTitle:"Chat",
+    greeting:"What would you like to know?",
+    greetingSub:"Ask about website security, headers, or your Scanner results",
+    placeholder:"Ask a question...",
+    disclaimer:"This assistant only discusses website security and will not help with exploits or attacks.",
     empty:"Please enter a question first.",
-    cleared:"Chat cleared.",
-    first:"I'm the CyberSentinel AI assistant. Ask me about website security, security headers, or your Scanner results.",
+    newChat:"New chat",
+    send:"Send",
     thinking:"Thinking...",
     user:"You", assistant:"CyberSentinel",
     notConfigured:"AI chat isn't enabled yet. GEMINI_API_KEY needs to be set on Render.",
@@ -147,49 +132,98 @@ const DICT = {
   }
 };
 
-// Display log for the UI (includes the canned greeting).
-let messages = [{ who: "assistant", key: "first" }];
-// Real conversation sent to the backend (greeting excluded; Gemini
-// expects the history to start with a user turn).
+const SUGGESTIONS = {
+  bn: [
+    "HSTS header কী?",
+    "CSP কীভাবে কাজ করে?",
+    "আমার স্ক্যান ফলাফল ব্যাখ্যা করো",
+    "Cookie flag কেন দরকার?"
+  ],
+  en: [
+    "What is the HSTS header?",
+    "How does CSP work?",
+    "Explain my scan results",
+    "Why do cookie flags matter?"
+  ]
+};
+
+// Display log (rendered bubbles). Separate from `history`, which is
+// what's actually sent to the backend.
+let messages = [];
 let history = [];
 let busy = false;
 
 const T = k => CS.t(k);
 const MAX_HISTORY_TURNS = 10;
 
+function renderChips() {
+  const box = $("chips");
+  box.replaceChildren();
+  (SUGGESTIONS[CS.prefs().language] || SUGGESTIONS.bn).forEach(text => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.textContent = text;
+    b.addEventListener("click", () => { if (!busy) sendMessage(text); });
+    box.append(b);
+  });
+}
+
+function bubble(who, text, typing) {
+  const row = document.createElement("div");
+  row.className = "bubble-row " + who;
+  const b = document.createElement("div");
+  b.className = "bubble " + who;
+  if (typing) {
+    b.innerHTML = '<span class="typing-dots"><span></span><span></span><span></span></span>';
+  } else {
+    b.textContent = text;
+  }
+  row.append(b);
+  return row;
+}
+
 function renderChat() {
+  const hasMessages = messages.length > 0;
+  $("emptyState").classList.toggle("hidden", hasMessages);
+  $("chat").classList.toggle("hidden", !hasMessages);
+
   const box = $("chat");
   box.replaceChildren();
-  messages.forEach(m => {
-    const div = document.createElement("div");
-    div.className = "message" + (m.who === "user" ? " user" : "") + (m.typing ? " typing" : "");
-    const strong = document.createElement("strong");
-    strong.textContent = m.who === "user" ? T("user") : T("assistant");
-    const body = document.createElement("div");
-    body.textContent = m.key ? T(m.key) : m.text;
-    div.append(strong, body);
-    box.append(div);
-  });
+  messages.forEach(m => box.append(bubble(m.who, m.text, m.typing)));
   box.scrollTop = box.scrollHeight;
 }
 
-CS.init({ dict: DICT, onChange: renderChat });
+CS.init({ dict: DICT, onChange: () => { renderChips(); renderChat(); } });
+
+function autoResize() {
+  const el = $("prompt");
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 140) + "px";
+}
+$("prompt").addEventListener("input", autoResize);
 
 function setBusy(next) {
   busy = next;
-  $("sendButton").disabled = busy;
-  $("sendButton").querySelector("span").textContent = busy ? T("sending") : T("send");
+  const btn = $("sendButton");
+  btn.disabled = busy;
+  btn.innerHTML = busy
+    ? '<svg class="icon spin" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9"/></svg>'
+    : '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>';
 }
 
-async function askAssistant(userText) {
-  history.push({ role: "user", text: userText });
-  if (history.length > MAX_HISTORY_TURNS) {
-    history = history.slice(-MAX_HISTORY_TURNS);
-  }
-
-  messages.push({ who: "assistant", text: T("thinking"), typing: true });
+async function sendMessage(text) {
+  messages.push({ who: "user", text });
   renderChat();
 
+  history.push({ role: "user", text });
+  if (history.length > MAX_HISTORY_TURNS) history = history.slice(-MAX_HISTORY_TURNS);
+
+  const typingMsg = { who: "assistant", text: "", typing: true };
+  messages.push(typingMsg);
+  renderChat();
+
+  setBusy(true);
   try {
     const response = await fetch("/api/chat", {
       method: "POST",
@@ -198,14 +232,14 @@ async function askAssistant(userText) {
     });
 
     const data = await response.json().catch(() => null);
-    messages.pop(); // remove the "thinking" placeholder
+    messages.pop(); // remove typing indicator
 
     if (!response.ok) {
       const code = response.status;
       const detail = data && typeof data.detail === "string" ? data.detail : "";
       const key = code === 503 ? "notConfigured" : code === 429 ? "busy" : "error";
       messages.push({ who: "assistant", text: detail || T(key) });
-      history.pop(); // failed turn: don't keep it in context
+      history.pop();
       renderChat();
       return;
     }
@@ -221,10 +255,13 @@ async function askAssistant(userText) {
     messages.push({ who: "assistant", text: T("network") });
     history.pop();
     renderChat();
+  } finally {
+    setBusy(false);
   }
 }
 
-$("sendButton").addEventListener("click", () => {
+$("chatForm").addEventListener("submit", e => {
+  e.preventDefault();
   if (busy) return;
   const text = $("prompt").value.trim();
   if (!text) {
@@ -232,29 +269,26 @@ $("sendButton").addEventListener("click", () => {
     $("prompt").focus();
     return;
   }
-
-  messages.push({ who: "user", text });
   $("prompt").value = "";
+  autoResize();
   $("status").textContent = "";
-  renderChat();
-
-  setBusy(true);
-  askAssistant(text).finally(() => setBusy(false));
+  sendMessage(text);
 });
 
 $("prompt").addEventListener("keydown", e => {
-  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+  if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
-    $("sendButton").click();
+    $("chatForm").requestSubmit();
   }
 });
 
-$("clearButton").addEventListener("click", () => {
+$("newChatButton").addEventListener("click", () => {
   if (busy) return;
-  messages = [{ who: "assistant", key: "cleared" }];
+  messages = [];
   history = [];
   $("status").textContent = "";
   renderChat();
+  $("prompt").focus();
 });
 </script>
 </body>
