@@ -126,50 +126,22 @@ function renderPrefs() {
  $("scan").textContent = busy ? c.scanning : c.scan;
  $("download").textContent = c.download;
 }
-$("scanForm").addEventListener("submit", async e => {
- e.preventDefault();
- if (busy) return;
- const token = $("token").value;
- const url = $("target").value.trim();
- const consent = $("consent").checked;
- if (!consent) return;
- busy = true;
- $("scan").disabled = true;
- $("download").disabled = true;
- $("status").textContent = words[prefs.language].scanning;
- $("report").textContent = "";
- renderPrefs();
- try {
-  const response = await fetch("/api/scan", {
-   method:"POST",
-   headers:{"Content-Type":"application/json","X-Scan-Token":token},
-   body:JSON.stringify({url,confirm_authorized:consent})
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-   const detail = typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail || data || {});
-   throw new Error(detail || "HTTP "+response.status);
-  }
-
 function buildSecuritySummary(data) {
   const findings = Array.isArray(data.findings)
     ? data.findings
     : [];
 
-  const total = findings.length;
   const present = findings.filter(item => item.present).length;
   const missing = findings.filter(item => !item.present);
 
-  const score = total > 0
-    ? Math.round((present / total) * 100)
-    : null;
-
   return {
     title: "Security Header Summary",
-    score,
+    score: findings.length
+      ? Math.round((present / findings.length) * 100)
+      : null,
     score_note:
-      "এটি শুধু পরীক্ষা করা security header-এর উপস্থিতির স্কোর; পূর্ণাঙ্গ security rating নয়।",
-    headers_checked: total,
+      "এটি শুধু পরীক্ষিত security header-এর উপস্থিতির স্কোর।",
+    headers_checked: findings.length,
     headers_present: present,
     headers_missing: missing.map(item => ({
       header: item.header,
@@ -178,42 +150,86 @@ function buildSecuritySummary(data) {
   };
 }
 
-   
-  const summary = buildSecuritySummary(data);
-const displayReport = {
-  ...data,
-  security_summary: summary
-};
+$("scanForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (busy) return;
 
-lastReport = displayReport;
-$("report").textContent = JSON.stringify(displayReport, null, 2);
-  $("status").textContent = words[prefs.language].success;
-  $("download").disabled = false;
- } try {
-  const history = JSON.parse(
-    localStorage.getItem("cybersentinel.history") || "[]"
-  );
+  const token = $("token").value;
+  const url = $("target").value.trim();
+  const consent = $("consent").checked;
 
-  history.unshift({
-    title: url,
-    date: new Date().toLocaleString(),
-    report: data
-  });
+  if (!consent) return;
 
-  localStorage.setItem(
-    "cybersentinel.history",
-    JSON.stringify(history.slice(0, 50))
-  );
-} catch (error) {
-  console.error("Could not save scan history:", error);
- } catch (err) {
-  $("status").textContent = words[prefs.language].error+": "+err.message;
-  $("report").textContent = words[prefs.language].empty;
- } finally {
-  busy = false;
-  $("scan").disabled = false;
+  busy = true;
+  $("scan").disabled = true;
+  $("download").disabled = true;
+  $("status").textContent = words[prefs.language].scanning;
+  $("report").textContent = "";
   renderPrefs();
- }
+
+  try {
+    const response = await fetch("/api/scan", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Scan-Token": token
+      },
+      body: JSON.stringify({
+        url,
+        confirm_authorized: consent
+      })
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const detail = typeof data.detail === "string"
+        ? data.detail
+        : JSON.stringify(data.detail || data || {});
+
+      throw new Error(detail || "HTTP " + response.status);
+    }
+
+    const displayReport = {
+      ...data,
+      security_summary: buildSecuritySummary(data)
+    };
+
+    lastReport = displayReport;
+    $("report").textContent =
+      JSON.stringify(displayReport, null, 2);
+    $("status").textContent = words[prefs.language].success;
+    $("download").disabled = false;
+
+    try {
+      const history = JSON.parse(
+        localStorage.getItem("cybersentinel.history") || "[]"
+      );
+
+      history.unshift({
+        title: url,
+        date: new Date().toLocaleString(),
+        report: displayReport
+      });
+
+      localStorage.setItem(
+        "cybersentinel.history",
+        JSON.stringify(history.slice(0, 50))
+      );
+    } catch (historyError) {
+      console.error("History save failed:", historyError);
+    }
+
+  } catch (err) {
+    $("status").textContent =
+      words[prefs.language].error + ": " + err.message;
+    $("report").textContent =
+      JSON.stringify({ error: err.message }, null, 2);
+  } finally {
+    busy = false;
+    $("scan").disabled = false;
+    renderPrefs();
+  }
 });
 $("download").addEventListener("click", () => {
  if (!lastReport) return;
