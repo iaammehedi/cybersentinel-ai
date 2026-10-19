@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import socket
 import secrets
@@ -61,6 +62,8 @@ if not ALLOWED_HOSTS and not DEMO_MODE:
     )
 
 
+# Passive header checks: presence only. Order here only affects the
+# order findings are listed in; it has no effect on scoring.
 HEADERS_TO_CHECK = {
     "strict-transport-security":
         "HTTPS ব্যবহারের পাশাপাশি HSTS কনফিগারেশন যাচাই করুন.",
@@ -68,11 +71,23 @@ HEADERS_TO_CHECK = {
         "অ্যাপের উপযোগী Content Security Policy বিবেচনা করুন.",
     "x-content-type-options":
         "X-Content-Type-Options: nosniff বিবেচনা করুন.",
+    "x-frame-options":
+        "ক্লিকজ্যাকিং ঠেকাতে X-Frame-Options অথবা CSP frame-ancestors কনফিগার করুন.",
     "referrer-policy":
         "উপযুক্ত Referrer-Policy কনফিগার করুন.",
     "permissions-policy":
         "অপ্রয়োজনীয় browser feature সীমিত করুন.",
 }
+
+# Headers that, if present, reveal server/framework details to an
+# attacker without providing any benefit to the visitor.
+INFO_LEAK_HEADERS = [
+    "server",
+    "x-powered-by",
+    "x-aspnet-version",
+    "x-aspnetmvc-version",
+    "x-generator",
+]
 
 
 # Security headers sent with every response of THIS application.
@@ -311,6 +326,115 @@ class PinnedHTTPSConnection(http.client.HTTPSConnection):
             raise
 
 
+def analyze_tls(sock: ssl.SSLSocket) -> dict:
+    """Read TLS version, cipher and certificate expiry. Passive: no
+    extra connections, uses the handshake already performed."""
+    info: dict = {}
+
+    try:
+        info["protocol"] = sock.version()
+    except Exception:
+        pass
+
+    try:
+        cipher = sock.cipher()
+        if cipher:
+            info["cipher"] = cipher[0]
+    except Exception:
+        pass
+
+    try:
+        cert = sock.getpeercert() or {}
+        not_after = cert.get("notAfter")
+        if not_after:
+            expires_epoch = ssl.cert_time_to_seconds(not_after)
+            expires_dt = datetime.fromtimestamp(
+                expires_epoch, tz=timezone.utc
+            )
+            info["certificate_expires_at"] = expires_dt.isoformat()
+            info["certificate_days_remaining"] = (
+                expires_dt - datetime.now(timezone.utc)
+            ).days
+    except Exception:
+        pass
+
+    return info
+
+
+def analyze_cookies(headers) -> list[dict]:
+    """Report cookie NAMES and security flags only — never values,
+    since a cookie value can be a live session secret."""
+    results: list[dict] = []
+
+    try:
+        raw_cookies = headers.get_all("Set-Cookie") or []
+    except AttributeError:
+        raw_cookies = []
+
+    for raw in raw_cookies[:20]:
+        parts = [p.strip() for p in raw.split(";") if p.strip()]
+        if not parts:
+            continue
+
+        name = parts[0].split("=", 1)[0].strip()
+        if not name:
+            continue
+
+        attr_names = {p.split("=", 1)[0].strip().lower() for p in parts[1:]}
+        samesite = None
+        for p in parts[1:]:
+            if p.lower().startswith("samesite="):
+                samesite = p.split("=", 1)[1].strip()
+                break
+
+        results.append({
+            "name": name,
+            "secure": "secure" in attr_names,
+            "httponly": "httponly" in attr_names,
+            "samesite": samesite,
+        })
+
+    return results
+
+
+def analyze_info_leak(headers) -> list[dict]:
+    found = []
+    for name in INFO_LEAK_HEADERS:
+        value = headers.get(name)
+        if value:
+            found.append({"header": name, "value": str(value)[:200]})
+    return found
+
+
+def analyze_header_quality(headers) -> list[str]:
+    """Advisory notes about header VALUES, separate from simple
+    presence/absence. Informational only — not a pass/fail score."""
+    notes = []
+
+    hsts = headers.get("strict-transport-security")
+    if hsts:
+        match = re.search(r"max-age=(\d+)", hsts, re.IGNORECASE)
+        max_age = int(match.group(1)) if match else 0
+        if max_age < 15552000:  # ~180 days
+            notes.append(
+                "HSTS-এর max-age ছয় মাসের কম; দীর্ঘ মেয়াদ বিবেচনা করুন."
+            )
+        if "includesubdomains" not in hsts.lower():
+            notes.append("HSTS-এ includeSubDomains নেই.")
+
+    csp = headers.get("content-security-policy")
+    if csp:
+        lowered = csp.lower()
+        if "unsafe-inline" in lowered:
+            notes.append(
+                "CSP-তে 'unsafe-inline' আছে; এটি XSS সুরক্ষা দুর্বল করে."
+            )
+        if "unsafe-eval" in lowered:
+            notes.append("CSP-তে 'unsafe-eval' আছে; এটি ঝুঁকিপূর্ণ হতে পারে.")
+
+    return notes
+
+
 def run_check(host: str, pinned_ip: str) -> dict:
     connection = PinnedHTTPSConnection(
         host,
@@ -336,21 +460,27 @@ def run_check(host: str, pinned_ip: str) -> dict:
         status = response.status
         headers = response.headers
 
+        base = {
+            "target": f"https://{host}/",
+            "checked_at": datetime.now(timezone.utc).isoformat(),
+            "status": status,
+            "redirect_followed": False,
+            "tls": analyze_tls(connection.sock),
+            "cookies": analyze_cookies(headers),
+            "info_leak": analyze_info_leak(headers),
+            "header_quality_notes": analyze_header_quality(headers),
+        }
+
         if 300 <= status < 400:
-            return {
-                "target": f"https://{host}/",
-                "checked_at": datetime.now(
-                    timezone.utc
-                ).isoformat(),
-                "status": status,
-                "redirect_followed": False,
+            base.update({
                 "note": "Redirect অনুসরণ করা হয়নি.",
                 "findings": [],
                 "limitations": [
                     "এটি সীমিত passive header check.",
                     "Redirect-এর গন্তব্য পরীক্ষা করা হয়নি.",
                 ],
-            }
+            })
+            return base
 
         findings = []
 
@@ -369,21 +499,17 @@ def run_check(host: str, pinned_ip: str) -> dict:
                 ),
             })
 
-        return {
-            "target": f"https://{host}/",
-            "checked_at": datetime.now(
-                timezone.utc
-            ).isoformat(),
-            "status": status,
-            "redirect_followed": False,
+        base.update({
             "findings": findings,
             "limitations": [
                 "এটি সীমিত passive header check, পূর্ণ penetration test নয়.",
                 "Header অনুপস্থিত থাকা একাই vulnerability প্রমাণ করে না.",
                 "কোনো exploit বা login attempt চালানো হয়নি.",
                 "শুধু domain-এর root path পরীক্ষা করা হয়েছে.",
+                "TLS ও cookie তথ্য শুধু root path-এর response থেকে নেওয়া.",
             ],
-        }
+        })
+        return base
 
     finally:
         connection.close()
