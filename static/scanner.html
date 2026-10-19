@@ -1,0 +1,178 @@
+
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#000000">
+<title>Scanner | CyberSentinel AI</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg:#000; --panel:#101010; --line:#292929;
+  --accent:#40E0C0; --text:#F5F7FA; --muted:#9CA3AF;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font:15px/1.6 system-ui,sans-serif; }
+.layout { min-height:100vh; }
+.sidebar { background:var(--panel); border-color:var(--line); padding:16px; display:flex; flex-direction:column; gap:14px; }
+.brand { font-size:18px; font-weight:750; }
+.brand span { color:var(--accent); }
+.nav { display:flex; flex-wrap:wrap; gap:8px; }
+.nav a { color:var(--muted); text-decoration:none; padding:9px 11px; border-radius:9px; }
+.nav a.active,.nav a:hover { color:var(--accent); background:#18201f; }
+main { width:min(780px,100%); margin:auto; padding:24px 16px; }
+.panel { background:var(--panel); border:1px solid var(--line); border-radius:15px; padding:17px; margin-bottom:16px; }
+h1 { font-size:26px; margin:0; }
+h2 { font-size:17px; margin:0 0 8px; }
+p,.muted { color:var(--muted); }
+label { display:block; margin:13px 0 5px; }
+input { width:100%; padding:12px; border:1px solid var(--line); border-radius:9px; background:var(--bg); color:var(--text); font:inherit; }
+.check { display:flex; align-items:flex-start; gap:9px; }
+.check input { width:auto; margin-top:7px; }
+button { border:0; border-radius:9px; padding:11px 15px; background:var(--accent); color:#001612; font:inherit; font-weight:700; cursor:pointer; }
+button:disabled { opacity:.5; }
+.actions { margin-top:14px; }
+#status { color:var(--accent); overflow-wrap:anywhere; }
+pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:13px; }
+.small { font-size:12px; }
+@media(min-width:760px) {
+ .layout.vertical { display:grid; grid-template-columns:235px minmax(0,1fr); }
+ .layout.vertical .sidebar { border-right:1px solid var(--line); min-height:100vh; }
+ .layout.vertical .nav { flex-direction:column; }
+ .layout.horizontal .sidebar { flex-direction:row; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); }
+ .layout.horizontal .nav { justify-content:flex-end; }
+}
+@media(max-width:759px) {
+ .sidebar { border-bottom:1px solid var(--line); }
+ .layout.vertical .nav { flex-direction:column; }
+ .layout.horizontal .nav { flex-direction:row; }
+}
+</style>
+</head>
+<body>
+<div class="layout vertical" id="layout">
+<aside class="sidebar">
+  <div class="brand">🛡️ CyberSentinel<span> AI</span></div>
+  <nav class="nav">
+    <a href="/" id="navChat">◈ Chat</a>
+    <a href="/static/scanner.html" class="active" id="navScanner">⌕ Scanner</a>
+    <a href="/static/reports.html" id="navReports">▤ Reports</a>
+    <a href="/static/history.html" id="navHistory">◷ History</a>
+    <a href="/static/settings.html" id="navSettings">⚙ Settings</a>
+  </nav>
+</aside>
+<main>
+  <section class="panel">
+    <h1 id="title">ওয়েবসাইট Scanner</h1>
+    <p id="intro">শুধু নিজের বা লিখিত অনুমতিপ্রাপ্ত ওয়েবসাইট পরীক্ষা করো।</p>
+  </section>
+  <section class="panel">
+    <h2 id="formTitle">অনুমোদিত HTTPS পরীক্ষা</h2>
+    <p id="formHelp">এই টুল সীমিত HTTPS status ও security headers পরীক্ষা করার জন্য।</p>
+    <form id="scanForm">
+      <label for="token" id="tokenLabel">Private scan token</label>
+      <input id="token" type="password" autocomplete="off" required>
+      <label for="target" id="targetLabel">ওয়েবসাইটের HTTPS URL</label>
+      <input id="target" type="url" placeholder="https://your-domain.example" required>
+      <label class="check">
+        <input id="consent" type="checkbox" required>
+        <span id="consentText">আমি এই ওয়েবসাইট পরীক্ষা করার অনুমতি পেয়েছি।</span>
+      </label>
+      <div class="actions"><button id="scan" type="submit">নিরাপত্তা পরীক্ষা চালাও</button></div>
+    </form>
+    <p id="status" role="status" aria-live="polite"></p>
+  </section>
+  <section class="panel">
+    <h2 id="reportTitle">পরীক্ষার ফলাফল</h2>
+    <pre id="report">এখনো কোনো পরীক্ষা চালানো হয়নি।</pre>
+    <button id="download" type="button" disabled>JSON রিপোর্ট ডাউনলোড</button>
+  </section>
+  <p class="small" id="notice">এটি সীমিত passive checker; পূর্ণাঙ্গ vulnerability scanner নয়।</p>
+</main>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const defaults = {theme:"deep",layout:"vertical",language:"bn"};
+const themes = {
+ deep:{bg:"#000000",panel:"#101010",line:"#292929",accent:"#40E0C0",text:"#F5F7FA",muted:"#9CA3AF"},
+ midnight:{bg:"#0B1120",panel:"#141E30",line:"#2C3B50",accent:"#38D9C0",text:"#EEF5FF",muted:"#9CACC3"},
+ matrix:{bg:"#020602",panel:"#091109",line:"#203520",accent:"#39FF14",text:"#E9FFE7",muted:"#9BB49A"},
+ purple:{bg:"#0B0812",panel:"#15101F",line:"#352745",accent:"#A78BFA",text:"#F5F0FF",muted:"#B8AACB"},
+ light:{bg:"#F4F6FA",panel:"#FFFFFF",line:"#D9E0EA",accent:"#147D71",text:"#152033",muted:"#5C6B7E"}
+};
+const words = {
+ bn:{title:"ওয়েবসাইট Scanner",intro:"শুধু নিজের বা লিখিত অনুমতিপ্রাপ্ত ওয়েবসাইট পরীক্ষা করো.",formTitle:"অনুমোদিত HTTPS পরীক্ষা",formHelp:"এই টুল সীমিত HTTPS status ও security headers পরীক্ষা করার জন্য।",tokenLabel:"Private scan token",targetLabel:"ওয়েবসাইটের HTTPS URL",consentText:"আমি এই ওয়েবসাইট পরীক্ষা করার অনুমতি পেয়েছি।",scan:"নিরাপত্তা পরীক্ষা চালাও",scanning:"পরীক্ষা চলছে...",reportTitle:"পরীক্ষার ফলাফল",empty:"এখনো কোনো পরীক্ষা চালানো হয়নি।",notice:"এটি সীমিত passive checker; পূর্ণাঙ্গ vulnerability scanner নয়.",success:"Backend থেকে ফলাফল পাওয়া গেছে।",error:"পরীক্ষা ব্যর্থ",download:"JSON রিপোর্ট ডাউনলোড",navChat:"◈ চ্যাট",navScanner:"⌕ স্ক্যানার",navReports:"▤ রিপোর্ট",navHistory:"◷ ইতিহাস",navSettings:"⚙ সেটিংস"},
+ en:{title:"Website Scanner",intro:"Only test websites you own or are explicitly authorized to assess.",formTitle:"Authorized HTTPS check",formHelp:"This tool performs limited HTTPS status and security-header checks.",tokenLabel:"Private scan token",targetLabel:"Website HTTPS URL",consentText:"I am authorized to test this website.",scan:"Run security check",scanning:"Checking...",reportTitle:"Scan results",empty:"No scan has been run yet.",notice:"This is a limited passive checker, not a full vulnerability scanner.",success:"Results received from backend.",error:"Scan failed",download:"Download JSON report",navChat:"◈ Chat",navScanner:"⌕ Scanner",navReports:"▤ Reports",navHistory:"◷ History",navSettings:"⚙ Settings"}
+};
+let prefs = {...defaults};
+let lastReport = null;
+let busy = false;
+function loadPrefs() {
+ try {
+  const p = JSON.parse(localStorage.getItem("cybersentinel.preferences") || "{}");
+  if (themes[p.theme]) prefs.theme = p.theme;
+  if (["vertical","horizontal"].includes(p.layout)) prefs.layout = p.layout;
+  if (["bn","en"].includes(p.language)) prefs.language = p.language;
+ } catch (_) {}
+}
+function renderPrefs() {
+ const theme = themes[prefs.theme] || themes.deep;
+ Object.entries(theme).forEach(([k,v]) => document.documentElement.style.setProperty("--"+k,v));
+ $("layout").className = "layout "+prefs.layout;
+ document.documentElement.lang = prefs.language;
+ const c = words[prefs.language];
+ Object.keys(c).forEach(k => { if ($(k)) $(k).textContent = c[k]; });
+ $("scan").textContent = busy ? c.scanning : c.scan;
+ $("download").textContent = c.download;
+}
+$("scanForm").addEventListener("submit", async e => {
+ e.preventDefault();
+ if (busy) return;
+ const token = $("token").value;
+ const url = $("target").value.trim();
+ const consent = $("consent").checked;
+ if (!consent) return;
+ busy = true;
+ $("scan").disabled = true;
+ $("download").disabled = true;
+ $("status").textContent = words[prefs.language].scanning;
+ $("report").textContent = "";
+ renderPrefs();
+ try {
+  const response = await fetch("/api/scan", {
+   method:"POST",
+   headers:{"Content-Type":"application/json","X-Scan-Token":token},
+   body:JSON.stringify({url,confirm_authorized:consent})
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+   const detail = typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail || data || {});
+   throw new Error(detail || "HTTP "+response.status);
+  }
+  lastReport = data;
+  $("report").textContent = JSON.stringify(data,null,2);
+  $("status").textContent = words[prefs.language].success;
+  $("download").disabled = false;
+ } catch (err) {
+  $("status").textContent = words[prefs.language].error+": "+err.message;
+  $("report").textContent = words[prefs.language].empty;
+ } finally {
+  busy = false;
+  $("scan").disabled = false;
+  renderPrefs();
+ }
+});
+$("download").addEventListener("click", () => {
+ if (!lastReport) return;
+ const blob = new Blob([JSON.stringify(lastReport,null,2)],{type:"application/json"});
+ const u = URL.createObjectURL(blob);
+ const a = document.createElement("a");
+ a.href = u; a.download = "cybersentinel-report.json"; a.click();
+ setTimeout(() => URL.revokeObjectURL(u),1000);
+});
+loadPrefs();
+renderPrefs();
+</script>
+</body>
+</html>
