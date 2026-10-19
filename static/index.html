@@ -12,6 +12,7 @@
 .chat{display:flex;flex-direction:column;gap:10px;max-height:430px;overflow:auto;margin:15px 0}
 .message{border:1px solid var(--line);border-radius:12px;padding:12px;overflow-wrap:anywhere}
 .message.user{border-color:var(--muted)}
+.message.typing{color:var(--muted)}
 .message strong{display:block;margin-bottom:5px}
 textarea{display:block;width:100%;min-height:120px;padding:12px;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:10px;resize:vertical;font:inherit}
 textarea:focus-visible{outline:2px solid var(--text);outline-offset:3px}
@@ -36,7 +37,7 @@ footer{color:var(--muted);font-size:12px;padding:8px 0}
 
     <section class="panel">
       <h2 data-i="welcomeTitle">CyberSentinel AI-তে স্বাগতম</h2>
-      <p data-i="welcomeText">নিরাপত্তা পরীক্ষা পরিচালনা করতে Scanner ব্যবহার করো। এই চ্যাটটি এখন নিয়মভিত্তিক; প্রকৃত AI মডেল যুক্ত নেই।</p>
+      <p data-i="welcomeText">এই চ্যাট একটি সীমিত AI সহকারী — শুধু website security, header ও Scanner-এর ফলাফল নিয়ে সাহায্য করে। স্ক্যান চালাতে Scanner পেজ ব্যবহার করো।</p>
       <div class="quicklinks">
         <a href="/static/scanner.html">
           <div class="quick-title">
@@ -70,16 +71,16 @@ footer{color:var(--muted);font-size:12px;padding:8px 0}
     </section>
 
     <section class="panel">
-      <h2 data-i="chatTitle">তোমার কাজ লিখো</h2>
+      <h2 data-i="chatTitle">তোমার প্রশ্ন লিখো</h2>
       <div class="chat" id="chat" aria-live="polite"></div>
 
-      <label for="prompt" data-i="promptLabel">তোমার নির্দেশনা</label>
+      <label for="prompt" data-i="promptLabel">তোমার প্রশ্ন</label>
       <textarea id="prompt" data-ph="placeholder"></textarea>
 
       <div class="actions">
         <button id="sendButton" type="button" class="primary">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-          <span data-i="send">বিশ্লেষণ শুরু</span>
+          <span data-i="send">পাঠাও</span>
         </button>
         <button id="clearButton" type="button">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
@@ -87,7 +88,7 @@ footer{color:var(--muted);font-size:12px;padding:8px 0}
         </button>
       </div>
 
-      <p class="muted small" data-i="notice">এটি পূর্ণাঙ্গ AI scanner নয়। স্ক্যানের জন্য Scanner পেজ ব্যবহার করো।</p>
+      <p class="muted small" data-i="notice">এই সহকারী শুধু website security বিষয়ে কথা বলে; এটি নিজে কোনো স্ক্যান চালায় না এবং exploit বা attack সংক্রান্ত সাহায্য দেয় না।</p>
       <p id="status" role="status" aria-live="polite"></p>
     </section>
 
@@ -103,51 +104,65 @@ const DICT = {
   bn: {
     pageTitle:"চ্যাট", subtitle:"নিরাপদ ওয়েবসাইট বিশ্লেষণ সহকারী",
     welcomeTitle:"CyberSentinel AI-তে স্বাগতম",
-    welcomeText:"নিরাপত্তা পরীক্ষা পরিচালনা করতে Scanner ব্যবহার করো। এই চ্যাটটি এখন নিয়মভিত্তিক; প্রকৃত AI মডেল যুক্ত নেই।",
+    welcomeText:"এই চ্যাট একটি সীমিত AI সহকারী — শুধু website security, header ও Scanner-এর ফলাফল নিয়ে সাহায্য করে। স্ক্যান চালাতে Scanner পেজ ব্যবহার করো।",
     scanner:"স্ক্যানার", reports:"রিপোর্ট", history:"ইতিহাস", settings:"সেটিংস",
     scannerDesc:"অনুমোদিত HTTPS header পরীক্ষা", reportsDesc:"নিরাপত্তা রিপোর্ট দেখো",
     historyDesc:"আগের ফলাফল দেখো", settingsDesc:"ভাষা ও থিমের সেটিংস",
-    chatTitle:"তোমার কাজ লিখো", promptLabel:"তোমার নির্দেশনা",
-    placeholder:"তুমি কী পরীক্ষা করতে চাও?",
-    send:"বিশ্লেষণ শুরু", clear:"চ্যাট পরিষ্কার",
-    notice:"এটি পূর্ণাঙ্গ AI scanner নয়। স্ক্যানের জন্য Scanner পেজ ব্যবহার করো।",
+    chatTitle:"তোমার প্রশ্ন লিখো", promptLabel:"তোমার প্রশ্ন",
+    placeholder:"যেমন: HSTS header কী এবং কেন দরকার?",
+    send:"পাঠাও", sending:"পাঠানো হচ্ছে...", clear:"চ্যাট পরিষ্কার",
+    notice:"এই সহকারী শুধু website security বিষয়ে কথা বলে; এটি নিজে কোনো স্ক্যান চালায় না এবং exploit বা attack সংক্রান্ত সাহায্য দেয় না।",
     footer:"CyberSentinel AI — সীমিত passive security checker। শুধু অনুমতিপ্রাপ্ত সিস্টেম পরীক্ষা করো।",
-    empty:"প্রথমে তোমার নির্দেশনা লিখো।",
-    response:"নিরাপত্তা পরীক্ষা করতে Scanner পেজ খোলো। শুধু নিজের বা লিখিত অনুমতিপ্রাপ্ত ডোমেইন পরীক্ষা করো।",
+    empty:"প্রথমে তোমার প্রশ্ন লিখো।",
     cleared:"চ্যাট পরিষ্কার করা হয়েছে।",
-    first:"আমি তোমাকে অনুমোদিত ওয়েবসাইটের নিরাপত্তা পরীক্ষা পরিচালনা করতে সাহায্য করতে পারি।",
-    user:"তুমি", assistant:"CyberSentinel"
+    first:"আমি CyberSentinel AI-এর সহকারী। website security, security header, অথবা Scanner-এর ফলাফল নিয়ে প্রশ্ন করতে পারো।",
+    thinking:"ভাবছে...",
+    user:"তুমি", assistant:"CyberSentinel",
+    notConfigured:"AI চ্যাট এখনো চালু করা হয়নি। Render-এ GEMINI_API_KEY সেট করতে হবে।",
+    busy:"এখন অনেক অনুরোধ আসছে বা তুমি দ্রুত পাঠাচ্ছ; একটু অপেক্ষা করে আবার চেষ্টা করো।",
+    error:"উত্তর পাওয়া যায়নি; একটু পরে আবার চেষ্টা করো।",
+    network:"ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করো।"
   },
   en: {
     pageTitle:"Chat", subtitle:"Website security assistant",
     welcomeTitle:"Welcome to CyberSentinel AI",
-    welcomeText:"Use Scanner to run a security check. This chat is rule-based; no real AI model is connected.",
+    welcomeText:"This chat is a scoped AI assistant — it only helps with website security, headers and Scanner results. Use the Scanner page to run a check.",
     scanner:"Scanner", reports:"Reports", history:"History", settings:"Settings",
     scannerDesc:"Authorized HTTPS header check", reportsDesc:"View security reports",
     historyDesc:"View previous results", settingsDesc:"Language and theme settings",
-    chatTitle:"Describe your task", promptLabel:"Your instruction",
-    placeholder:"What would you like to check?",
-    send:"Start analysis", clear:"Clear chat",
-    notice:"This is not a full AI scanner. Use the Scanner page to run checks.",
+    chatTitle:"Ask your question", promptLabel:"Your question",
+    placeholder:"e.g. What is the HSTS header and why does it matter?",
+    send:"Send", sending:"Sending...", clear:"Clear chat",
+    notice:"This assistant only discusses website security; it does not run scans itself and will not help with exploits or attacks.",
     footer:"CyberSentinel AI — limited passive security checker. Test authorized systems only.",
-    empty:"Please enter an instruction first.",
-    response:"Open the Scanner page to run a check. Only test domains you own or have written permission to assess.",
+    empty:"Please enter a question first.",
     cleared:"Chat cleared.",
-    first:"I can help you run security checks on websites you are authorized to assess.",
-    user:"You", assistant:"CyberSentinel"
+    first:"I'm the CyberSentinel AI assistant. Ask me about website security, security headers, or your Scanner results.",
+    thinking:"Thinking...",
+    user:"You", assistant:"CyberSentinel",
+    notConfigured:"AI chat isn't enabled yet. GEMINI_API_KEY needs to be set on Render.",
+    busy:"Things are busy right now, or you're sending too fast; please wait and try again.",
+    error:"Could not get a reply; please try again shortly.",
+    network:"Check your internet connection and try again."
   }
 };
 
-// Messages are stored as {who, key|text} so they re-translate on language change.
+// Display log for the UI (includes the canned greeting).
 let messages = [{ who: "assistant", key: "first" }];
+// Real conversation sent to the backend (greeting excluded; Gemini
+// expects the history to start with a user turn).
+let history = [];
+let busy = false;
+
 const T = k => CS.t(k);
+const MAX_HISTORY_TURNS = 10;
 
 function renderChat() {
   const box = $("chat");
   box.replaceChildren();
   messages.forEach(m => {
     const div = document.createElement("div");
-    div.className = "message" + (m.who === "user" ? " user" : "");
+    div.className = "message" + (m.who === "user" ? " user" : "") + (m.typing ? " typing" : "");
     const strong = document.createElement("strong");
     strong.textContent = m.who === "user" ? T("user") : T("assistant");
     const body = document.createElement("div");
@@ -160,18 +175,71 @@ function renderChat() {
 
 CS.init({ dict: DICT, onChange: renderChat });
 
+function setBusy(next) {
+  busy = next;
+  $("sendButton").disabled = busy;
+  $("sendButton").querySelector("span").textContent = busy ? T("sending") : T("send");
+}
+
+async function askAssistant(userText) {
+  history.push({ role: "user", text: userText });
+  if (history.length > MAX_HISTORY_TURNS) {
+    history = history.slice(-MAX_HISTORY_TURNS);
+  }
+
+  messages.push({ who: "assistant", text: T("thinking"), typing: true });
+  renderChat();
+
+  try {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: history })
+    });
+
+    const data = await response.json().catch(() => null);
+    messages.pop(); // remove the "thinking" placeholder
+
+    if (!response.ok) {
+      const code = response.status;
+      const detail = data && typeof data.detail === "string" ? data.detail : "";
+      const key = code === 503 ? "notConfigured" : code === 429 ? "busy" : "error";
+      messages.push({ who: "assistant", text: detail || T(key) });
+      history.pop(); // failed turn: don't keep it in context
+      renderChat();
+      return;
+    }
+
+    const reply = data && typeof data.reply === "string" ? data.reply : "";
+    if (!reply) throw new Error("empty");
+
+    history.push({ role: "model", text: reply });
+    messages.push({ who: "assistant", text: reply });
+    renderChat();
+  } catch (_) {
+    messages.pop();
+    messages.push({ who: "assistant", text: T("network") });
+    history.pop();
+    renderChat();
+  }
+}
+
 $("sendButton").addEventListener("click", () => {
+  if (busy) return;
   const text = $("prompt").value.trim();
   if (!text) {
     $("status").textContent = T("empty");
     $("prompt").focus();
     return;
   }
+
   messages.push({ who: "user", text });
-  messages.push({ who: "assistant", key: "response" });
   $("prompt").value = "";
   $("status").textContent = "";
   renderChat();
+
+  setBusy(true);
+  askAssistant(text).finally(() => setBusy(false));
 });
 
 $("prompt").addEventListener("keydown", e => {
@@ -182,7 +250,9 @@ $("prompt").addEventListener("keydown", e => {
 });
 
 $("clearButton").addEventListener("click", () => {
+  if (busy) return;
   messages = [{ who: "assistant", key: "cleared" }];
+  history = [];
   $("status").textContent = "";
   renderChat();
 });
