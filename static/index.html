@@ -5,7 +5,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#000000">
+<meta name="referrer" content="no-referrer">
 <title>CyberSentinel AI</title>
+
 <style>
 :root {
   color-scheme: dark;
@@ -16,17 +18,22 @@
   --text:#F5F7FA;
   --muted:#9CA3AF;
 }
+
 * { box-sizing:border-box; }
+
 body {
   margin:0;
   background:var(--bg);
   color:var(--text);
-  font:15px/1.6 system-ui,sans-serif;
+  font:15px/1.6 system-ui,-apple-system,sans-serif;
 }
+
 button,a,select,textarea { font:inherit; }
 button { cursor:pointer; }
 a { color:inherit; text-decoration:none; }
+
 .layout { min-height:100vh; }
+
 .sidebar {
   position:fixed;
   inset:0 auto 0 0;
@@ -37,40 +44,86 @@ a { color:inherit; text-decoration:none; }
   z-index:20;
   display:flex;
   flex-direction:column;
-  gap:18px;
+  gap:22px;
+  overflow-y:auto;
 }
+
 .brand {
+  display:flex;
+  align-items:center;
+  gap:10px;
   font-size:19px;
   font-weight:800;
   padding:6px 9px;
+  white-space:nowrap;
 }
-.brand span { color:var(--accent); }
-.nav { display:grid; gap:7px; }
-.nav a {
+
+.brand span { color:var(--text); }
+
+.icon {
+  width:21px;
+  height:21px;
+  flex:0 0 21px;
   display:block;
-  padding:12px 13px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.7;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+.brand .icon {
+  width:25px;
+  height:25px;
+  flex-basis:25px;
+  stroke-width:1.8;
+}
+
+.nav {
+  display:grid;
+  gap:7px;
+}
+
+.nav a {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-height:46px;
+  padding:11px 13px;
   border:1px solid transparent;
   border-radius:10px;
   color:var(--muted);
+  transition:background .15s ease,border-color .15s ease;
 }
-.nav a:hover,.nav a.active {
+
+.nav a:hover,
+.nav a.active {
   color:var(--text);
   background:var(--bg);
   border-color:var(--line);
 }
-.nav a.active { box-shadow:inset 3px 0 var(--accent); }
+
+.nav a.active {
+  box-shadow:inset 3px 0 var(--text);
+}
+
+.nav a span { flex:1; }
+
 .sidebar-note {
   margin-top:auto;
   color:var(--muted);
   font-size:12px;
   padding:10px;
+  border-top:1px solid var(--line);
 }
+
 main {
   margin-left:255px;
   padding:20px;
   width:calc(100% - 255px);
-  max-width:1150px;
+  max-width:1400px;
 }
+
 .topbar {
   display:flex;
   align-items:center;
@@ -78,11 +131,19 @@ main {
   gap:12px;
   margin-bottom:22px;
 }
-.top-left { display:flex; align-items:center; gap:12px; }
+
+.top-left {
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
 h1 { font-size:23px; margin:0; }
 h2 { font-size:18px; margin:0 0 10px; }
+
 .muted { color:var(--muted); }
 .small { font-size:12px; }
+
 .panel {
   background:var(--panel);
   border:1px solid var(--line);
@@ -90,30 +151,64 @@ h2 { font-size:18px; margin:0 0 10px; }
   padding:18px;
   margin:15px 0;
 }
+
 button {
-  border:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  border:1px solid transparent;
   border-radius:9px;
   padding:10px 14px;
-  background:var(--accent);
-  color:#06221f;
-  font-weight:750;
+  background:var(--text);
+  color:#000;
+  font-weight:700;
 }
+
+button .icon {
+  width:19px;
+  height:19px;
+}
+
 .secondary {
   background:var(--panel);
   color:var(--text);
-  border:1px solid var(--line);
+  border-color:var(--line);
 }
+
+button:focus-visible,
+a:focus-visible,
+textarea:focus-visible {
+  outline:2px solid var(--text);
+  outline-offset:3px;
+}
+
 #menuButton { display:none; }
-textarea,select {
+
+textarea {
+  display:block;
   width:100%;
+  min-height:120px;
   padding:12px;
   color:var(--text);
   background:var(--bg);
   border:1px solid var(--line);
   border-radius:10px;
+  resize:vertical;
 }
-textarea { min-height:120px; resize:vertical; }
-.actions { display:flex; gap:9px; flex-wrap:wrap; margin-top:12px; }
+
+label {
+  display:block;
+  margin:12px 0 6px;
+}
+
+.actions {
+  display:flex;
+  gap:9px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+
 .chat {
   display:flex;
   flex-direction:column;
@@ -122,64 +217,168 @@ textarea { min-height:120px; resize:vertical; }
   overflow:auto;
   margin:15px 0;
 }
+
 .message {
   border:1px solid var(--line);
   border-radius:12px;
   padding:12px;
   overflow-wrap:anywhere;
 }
-.message.user { border-color:var(--accent); }
+
+.message.user { border-color:#777; }
 .message strong { display:block; margin-bottom:5px; }
+
 .quicklinks {
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(145px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(155px,1fr));
   gap:10px;
+  margin-top:16px;
 }
+
 .quicklinks a {
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-width:0;
   padding:15px;
   border:1px solid var(--line);
   border-radius:12px;
   background:var(--bg);
+  transition:border-color .15s ease;
 }
-.quicklinks a:hover { border-color:var(--accent); }
-.status { color:var(--accent); }
+
+.quicklinks a:hover { border-color:#777; }
+
+.quicklinks .quick-title {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:700;
+}
+
+.quicklinks .icon {
+  width:22px;
+  height:22px;
+}
+
+.status {
+  color:var(--text);
+  overflow-wrap:anywhere;
+}
+
 .overlay {
   display:none;
   position:fixed;
   inset:0;
-  background:#0009;
+  background:rgba(0,0,0,.7);
   z-index:15;
 }
+
 footer {
   color:var(--muted);
   font-size:12px;
   padding:16px 0;
 }
+
 @media(max-width:760px) {
   .sidebar {
     transform:translateX(-100%);
     transition:transform .2s ease;
     width:min(285px,85vw);
   }
-  body.menu-open .sidebar { transform:translateX(0); }
-  body.menu-open .overlay { display:block; }
-  main { margin-left:0; width:100%; padding:14px; }
-  #menuButton { display:inline-block; }
+
+  body.menu-open .sidebar {
+    transform:translateX(0);
+  }
+
+  body.menu-open .overlay {
+    display:block;
+  }
+
+  main {
+    margin-left:0;
+    width:100%;
+    padding:14px;
+  }
+
+  #menuButton { display:inline-flex; }
+
   h1 { font-size:20px; }
+
+  .panel { padding:15px; }
+
+  .quicklinks {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media(max-width:360px) {
+  .quicklinks { grid-template-columns:1fr; }
 }
 </style>
 </head>
+
 <body>
 <div class="layout">
+
+  <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
-    <div class="brand">🛡️ CyberSentinel <span>AI</span></div>
+
+    <a class="brand" href="/" aria-label="CyberSentinel AI Home">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+      <span style="color:var(--text)">CyberSentinel <span>AI</span></span>
+    </a>
 
     <nav class="nav" aria-label="Main navigation">
-      <a class="active" href="/" aria-current="page">💬 <span data-i="chat">চ্যাট</span></a>
-      <a href="/static/scanner.html">🔎 <span data-i="scanner">Scanner</span></a>
-      <a href="/static/reports.html">📊 <span data-i="reports">Reports</span></a>
-      <a href="/static/history.html">🕘 <span data-i="history">History</span></a>
-      <a href="/static/settings.html">⚙️ <span data-i="settings">Settings</span></a>
+
+      <a class="active" href="/" aria-current="page">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/>
+        </svg>
+        <span data-i="chat">চ্যাট</span>
+      </a>
+
+      <a href="/static/scanner.html">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M10 3H5a2 2 0 0 0-2 2v5"/>
+          <path d="M14 3h5a2 2 0 0 1 2 2v5"/>
+          <path d="M3 14v5a2 2 0 0 0 2 2h5"/>
+          <path d="M14 21h5a2 2 0 0 0 2-2v-5"/>
+          <circle cx="10.5" cy="10.5" r="4"/>
+          <path d="m13.5 13.5 4 4"/>
+        </svg>
+        <span data-i="scanner">Scanner</span>
+      </a>
+
+      <a href="/static/reports.html">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 19V5"/>
+          <path d="M4 19h17"/>
+          <path d="m7 14 4-4 3 3 6-7"/>
+        </svg>
+        <span data-i="reports">Reports</span>
+      </a>
+
+      <a href="/static/history.html">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/>
+          <path d="M3 3v5h5"/>
+          <path d="M12 7v5l3 2"/>
+        </svg>
+        <span data-i="history">History</span>
+      </a>
+
+      <a href="/static/settings.html">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.6a8 8 0 0 1-1.7 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.7-1l-1.7.6-1.4-2.4L7.3 15a8 8 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.6a8 8 0 0 1 1.7-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.7 1l1.7-.6 1.4 2.4-1.4 1.1a8 8 0 0 1-.1 2z"/>
+        </svg>
+        <span data-i="settings">Settings</span>
+      </a>
+
     </nav>
 
     <div class="sidebar-note" data-i="sideNote">
@@ -189,12 +388,21 @@ footer {
 
   <div class="overlay" id="overlay"></div>
 
+  <!-- Main content -->
   <main>
+
     <header class="topbar">
       <div class="top-left">
+
         <button id="menuButton" class="secondary"
                 type="button" aria-label="Open menu"
-                aria-expanded="false">☰</button>
+                aria-expanded="false" aria-controls="sidebar">
+
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+
         <div>
           <h1 data-i="pageTitle">চ্যাট</h1>
           <div class="muted small" data-i="subtitle">
@@ -202,6 +410,7 @@ footer {
           </div>
         </div>
       </div>
+
       <button id="languageButton" class="secondary" type="button">
         English
       </button>
@@ -209,40 +418,78 @@ footer {
 
     <section class="panel">
       <h2 data-i="welcomeTitle">CyberSentinel AI-তে স্বাগতম</h2>
+
       <p class="muted" data-i="welcomeText">
         নিরাপত্তা পরীক্ষা পরিচালনা করতে Scanner ব্যবহার করো।
         এই চ্যাটটি এখন নিয়মভিত্তিক; প্রকৃত AI মডেল যুক্ত নেই।
       </p>
+
       <div class="quicklinks">
+
         <a href="/static/scanner.html">
-          <strong>🔎 <span data-i="scanner">Scanner</span></strong>
+          <div class="quick-title">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M10 3H5a2 2 0 0 0-2 2v5"/>
+              <path d="M14 3h5a2 2 0 0 1 2 2v5"/>
+              <path d="M3 14v5a2 2 0 0 0 2 2h5"/>
+              <path d="M14 21h5a2 2 0 0 0 2-2v-5"/>
+              <circle cx="10.5" cy="10.5" r="4"/>
+              <path d="m13.5 13.5 4 4"/>
+            </svg>
+            <span data-i="scanner">Scanner</span>
+          </div>
           <div class="muted small" data-i="scannerDesc">
             অনুমোদিত HTTPS header পরীক্ষা
           </div>
         </a>
+
         <a href="/static/reports.html">
-          <strong>📊 <span data-i="reports">Reports</span></strong>
+          <div class="quick-title">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 19V5"/>
+              <path d="M4 19h17"/>
+              <path d="m7 14 4-4 3 3 6-7"/>
+            </svg>
+            <span data-i="reports">Reports</span>
+          </div>
           <div class="muted small" data-i="reportsDesc">
             নিরাপত্তা রিপোর্ট দেখো
           </div>
         </a>
+
         <a href="/static/history.html">
-          <strong>🕘 <span data-i="history">History</span></strong>
+          <div class="quick-title">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/>
+              <path d="M3 3v5h5"/>
+              <path d="M12 7v5l3 2"/>
+            </svg>
+            <span data-i="history">History</span>
+          </div>
           <div class="muted small" data-i="historyDesc">
             আগের ফলাফল দেখো
           </div>
         </a>
+
         <a href="/static/settings.html">
-          <strong>⚙️ <span data-i="settings">Settings</span></strong>
+          <div class="quick-title">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.6a8 8 0 0 1-1.7 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.7-1l-1.7.6-1.4-2.4L7.3 15a8 8 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.6a8 8 0 0 1 1.7-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.7 1l1.7-.6 1.4 2.4-1.4 1.1a8 8 0 0 1-.1 2z"/>
+            </svg>
+            <span data-i="settings">Settings</span>
+          </div>
           <div class="muted small" data-i="settingsDesc">
             ভাষা ও থিমের সেটিংস
           </div>
         </a>
+
       </div>
     </section>
 
     <section class="panel">
       <h2 data-i="chatTitle">তোমার কাজ লিখো</h2>
+
       <div class="chat" id="chat" aria-live="polite">
         <div class="message">
           <strong>CyberSentinel</strong>
@@ -252,19 +499,36 @@ footer {
           </span>
         </div>
       </div>
+
       <label for="prompt" data-i="promptLabel">তোমার নির্দেশনা</label>
+
       <textarea id="prompt"
         placeholder="তুমি কী পরীক্ষা করতে চাও?"></textarea>
+
       <div class="actions">
-        <button id="sendButton" type="button" data-i="send">
-          বিশ্লেষণ শুরু
+        <button id="sendButton" type="button">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m22 2-7 20-4-9-9-4Z"/>
+            <path d="M22 2 11 13"/>
+          </svg>
+          <span data-i="send">বিশ্লেষণ শুরু</span>
         </button>
-        <button id="clearButton" type="button" class="secondary"
-                data-i="clear">চ্যাট পরিষ্কার</button>
+
+        <button id="clearButton" type="button" class="secondary">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 6h18"/>
+            <path d="M8 6V4h8v2"/>
+            <path d="m19 6-1 14H6L5 6"/>
+            <path d="M10 11v5M14 11v5"/>
+          </svg>
+          <span data-i="clear">চ্যাট পরিষ্কার</span>
+        </button>
       </div>
+
       <p class="muted small" data-i="notice">
         এটি পূর্ণাঙ্গ AI scanner নয়। স্ক্যানের জন্য Scanner পেজ ব্যবহার করো।
       </p>
+
       <p id="status" class="status" role="status" aria-live="polite"></p>
     </section>
 
@@ -272,6 +536,7 @@ footer {
       CyberSentinel AI — সীমিত passive security checker।
       শুধু অনুমতিপ্রাপ্ত সিস্টেম পরীক্ষা করো।
     </footer>
+
   </main>
 </div>
 
@@ -280,8 +545,11 @@ const $ = id => document.getElementById(id);
 
 const translations = {
   bn: {
-    chat:"চ্যাট", scanner:"Scanner", reports:"Reports",
-    history:"History", settings:"Settings",
+    chat:"চ্যাট",
+    scanner:"Scanner",
+    reports:"Reports",
+    history:"History",
+    settings:"Settings",
     sideNote:"শুধু অনুমোদিত ওয়েবসাইট পরীক্ষা করো।",
     pageTitle:"চ্যাট",
     subtitle:"নিরাপদ ওয়েবসাইট বিশ্লেষণ সহকারী",
@@ -296,16 +564,25 @@ const translations = {
     firstMessage:"আমি তোমাকে অনুমোদিত ওয়েবসাইটের নিরাপত্তা পরীক্ষা পরিচালনা করতে সাহায্য করতে পারি।",
     promptLabel:"তোমার নির্দেশনা",
     placeholder:"তুমি কী পরীক্ষা করতে চাও?",
-    send:"বিশ্লেষণ শুরু", clear:"চ্যাট পরিষ্কার",
+    send:"বিশ্লেষণ শুরু",
+    clear:"চ্যাট পরিষ্কার",
     notice:"এটি পূর্ণাঙ্গ AI scanner নয়। স্ক্যানের জন্য Scanner পেজ ব্যবহার করো।",
     footer:"CyberSentinel AI — সীমিত passive security checker। শুধু অনুমতিপ্রাপ্ত সিস্টেম পরীক্ষা করো।",
     empty:"প্রথমে তোমার নির্দেশনা লিখো।",
     response:"নিরাপত্তা পরীক্ষা করতে Scanner পেজ খোলো। শুধু নিজের বা লিখিত অনুমতিপ্রাপ্ত ডোমেইন পরীক্ষা করো।",
-    cleared:"চ্যাট পরিষ্কার করা হয়েছে।"
+    cleared:"চ্যাট পরিষ্কার করা হয়েছে।",
+    user:"তুমি",
+    assistant:"CyberSentinel",
+    menuOpen:"মেনু খোলো",
+    menuClose:"মেনু বন্ধ করো"
   },
+
   en: {
-    chat:"Chat", scanner:"Scanner", reports:"Reports",
-    history:"History", settings:"Settings",
+    chat:"Chat",
+    scanner:"Scanner",
+    reports:"Reports",
+    history:"History",
+    settings:"Settings",
     sideNote:"Only test authorized websites.",
     pageTitle:"Chat",
     subtitle:"Website security assistant",
@@ -320,12 +597,17 @@ const translations = {
     firstMessage:"I can help you run security checks on websites you are authorized to assess.",
     promptLabel:"Your instruction",
     placeholder:"What would you like to check?",
-    send:"Start analysis", clear:"Clear chat",
+    send:"Start analysis",
+    clear:"Clear chat",
     notice:"This is not a full AI scanner. Use the Scanner page to run checks.",
     footer:"CyberSentinel AI — limited passive security checker. Test authorized systems only.",
     empty:"Please enter an instruction first.",
     response:"Open the Scanner page to run a check. Only test domains you own or have written permission to assess.",
-    cleared:"Chat cleared."
+    cleared:"Chat cleared.",
+    user:"You",
+    assistant:"CyberSentinel",
+    menuOpen:"Open menu",
+    menuClose:"Close menu"
   }
 };
 
@@ -333,39 +615,59 @@ let lang = "bn";
 
 function applyLanguage() {
   document.documentElement.lang = lang;
+
   document.querySelectorAll("[data-i]").forEach(el => {
     const key = el.dataset.i;
-    if (translations[lang][key]) {
-      el.textContent = translations[lang][key];
+    const value = translations[lang][key];
+
+    if (value !== undefined) {
+      el.textContent = value;
     }
   });
+
   $("languageButton").textContent = translations[lang].language;
   $("prompt").placeholder = translations[lang].placeholder;
+
+  updateMenuButton();
+}
+
+function updateMenuButton() {
+  const open = document.body.classList.contains("menu-open");
+  $("menuButton").setAttribute("aria-expanded", String(open));
+  $("menuButton").setAttribute(
+    "aria-label",
+    open ? translations[lang].menuClose : translations[lang].menuOpen
+  );
 }
 
 function addMessage(who, text) {
   const div = document.createElement("div");
   div.className = "message" + (who === "user" ? " user" : "");
+
   const strong = document.createElement("strong");
-  strong.textContent = who === "user" ? translations[lang].chat : "CyberSentinel";
+  strong.textContent = who === "user"
+    ? translations[lang].user
+    : translations[lang].assistant;
+
   const content = document.createElement("div");
   content.textContent = text;
+
   div.append(strong, content);
   $("chat").appendChild(div);
   $("chat").scrollTop = $("chat").scrollHeight;
 }
 
+function closeMenu() {
+  document.body.classList.remove("menu-open");
+  updateMenuButton();
+}
+
 $("menuButton").addEventListener("click", () => {
-  const open = document.body.classList.toggle("menu-open");
-  $("menuButton").setAttribute("aria-expanded", String(open));
+  document.body.classList.toggle("menu-open");
+  updateMenuButton();
 });
 
 $("overlay").addEventListener("click", closeMenu);
-
-function closeMenu() {
-  document.body.classList.remove("menu-open");
-  $("menuButton").setAttribute("aria-expanded", "false");
-}
 
 document.querySelectorAll(".nav a").forEach(link => {
   link.addEventListener("click", closeMenu);
@@ -374,64 +676,101 @@ document.querySelectorAll(".nav a").forEach(link => {
 $("languageButton").addEventListener("click", () => {
   lang = lang === "bn" ? "en" : "bn";
   applyLanguage();
+
   try {
-    localStorage.setItem("cybersentinel.preferences",
-      JSON.stringify({
-        ...JSON.parse(localStorage.getItem("cybersentinel.preferences") || "{}"),
-        language: lang
-      })
+    const saved = JSON.parse(
+      localStorage.getItem("cybersentinel.preferences") || "{}"
+    );
+
+    saved.language = lang;
+
+    localStorage.setItem(
+      "cybersentinel.preferences",
+      JSON.stringify(saved)
     );
   } catch (_) {}
 });
 
 $("sendButton").addEventListener("click", () => {
   const prompt = $("prompt").value.trim();
+
   if (!prompt) {
     $("status").textContent = translations[lang].empty;
+    $("prompt").focus();
     return;
   }
 
   addMessage("user", prompt);
   $("prompt").value = "";
+
   addMessage("assistant", translations[lang].response);
   $("status").textContent = "";
 });
 
+$("prompt").addEventListener("keydown", event => {
+  if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+    event.preventDefault();
+    $("sendButton").click();
+  }
+});
+
 $("clearButton").addEventListener("click", () => {
   $("chat").replaceChildren();
+
   addMessage("assistant", translations[lang].cleared);
   $("status").textContent = "";
 });
+
+const themes = {
+  deep: {
+    bg:"#000000",
+    panel:"#101010",
+    line:"#292929",
+    accent:"#40E0C0",
+    text:"#F5F7FA",
+    muted:"#9CA3AF"
+  },
+  midnight: {
+    bg:"#0B1120",
+    panel:"#141E30",
+    line:"#2C3B50",
+    accent:"#38D9C0",
+    text:"#EEF5FF",
+    muted:"#9CACC3"
+  },
+  matrix: {
+    bg:"#020602",
+    panel:"#091109",
+    line:"#203520",
+    accent:"#39FF14",
+    text:"#E9FFE7",
+    muted:"#9BB49A"
+  },
+  purple: {
+    bg:"#0B0812",
+    panel:"#15101F",
+    line:"#352745",
+    accent:"#A78BFA",
+    text:"#F5F0FF",
+    muted:"#B8AACB"
+  },
+  light: {
+    bg:"#F4F6FA",
+    panel:"#FFFFFF",
+    line:"#D9E0EA",
+    accent:"#147D71",
+    text:"#152033",
+    muted:"#5C6B7E"
+  }
+};
 
 try {
   const saved = JSON.parse(
     localStorage.getItem("cybersentinel.preferences") || "{}"
   );
 
-  const themes = {
-    deep: {
-      bg:"#000000", panel:"#101010", line:"#292929",
-      accent:"#40E0C0", text:"#F5F7FA", muted:"#9CA3AF"
-    },
-    midnight: {
-      bg:"#0B1120", panel:"#141E30", line:"#2C3B50",
-      accent:"#38D9C0", text:"#EEF5FF", muted:"#9CACC3"
-    },
-    matrix: {
-      bg:"#020602", panel:"#091109", line:"#203520",
-      accent:"#39FF14", text:"#E9FFE7", muted:"#9BB49A"
-    },
-    purple: {
-      bg:"#0B0812", panel:"#15101F", line:"#352745",
-      accent:"#A78BFA", text:"#F5F0FF", muted:"#B8AACB"
-    },
-    light: {
-      bg:"#F4F6FA", panel:"#FFFFFF", line:"#D9E0EA",
-      accent:"#147D71", text:"#152033", muted:"#5C6B7E"
-    }
-  };
-
   const theme = themes[saved.theme] || themes.deep;
+
   Object.entries(theme).forEach(([key, value]) => {
     document.documentElement.style.setProperty("--" + key, value);
   });
