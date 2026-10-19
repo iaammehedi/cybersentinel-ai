@@ -641,12 +641,20 @@ def call_gemini(history: list[dict]) -> str:
         raw = response.read()
 
         if response.status != 200:
+            # Logged (not shown to the user) so the real cause is
+            # visible in Render's logs: wrong model name, disabled
+            # API, invalid key, quota, etc.
+            print(
+                "[chat] Gemini error status="
+                f"{response.status} body={raw[:500]!r}"
+            )
             raise RuntimeError(f"gemini_http_{response.status}")
 
         data = json.loads(raw)
         candidates = data.get("candidates") or []
 
         if not candidates:
+            print(f"[chat] Gemini returned no candidates: {raw[:500]!r}")
             raise RuntimeError("gemini_empty")
 
         parts = candidates[0].get("content", {}).get("parts", [])
@@ -655,11 +663,13 @@ def call_gemini(history: list[dict]) -> str:
         ).strip()
 
         if not text:
+            print(f"[chat] Gemini returned empty text: {raw[:500]!r}")
             raise RuntimeError("gemini_empty")
 
         return text
 
     except (OSError, ssl.SSLError, json.JSONDecodeError, http.client.HTTPException) as error:
+        print(f"[chat] Gemini call failed: {error!r}")
         raise RuntimeError("gemini_network") from error
 
     finally:
