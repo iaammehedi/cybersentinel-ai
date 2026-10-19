@@ -154,6 +154,23 @@ $("scanForm").addEventListener("submit", async e => {
   $("report").textContent = JSON.stringify(data,null,2);
   $("status").textContent = words[prefs.language].success;
   $("download").disabled = false;
+ } try {
+  const history = JSON.parse(
+    localStorage.getItem("cybersentinel.history") || "[]"
+  );
+
+  history.unshift({
+    title: url,
+    date: new Date().toLocaleString(),
+    report: data
+  });
+
+  localStorage.setItem(
+    "cybersentinel.history",
+    JSON.stringify(history.slice(0, 50))
+  );
+} catch (error) {
+  console.error("Could not save scan history:", error);
  } catch (err) {
   $("status").textContent = words[prefs.language].error+": "+err.message;
   $("report").textContent = words[prefs.language].empty;
