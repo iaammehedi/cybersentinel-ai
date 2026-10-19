@@ -62,6 +62,32 @@
       </section>
 
       <section class="panel">
+        <h2 data-i="tlsTitle">SSL সার্টিফিকেট ও TLS</h2>
+        <div class="stats">
+          <div class="stat">
+            <div class="muted small" data-i="daysLeft">মেয়াদ বাকি</div>
+            <div class="stat-value" id="certDays">—</div>
+          </div>
+        </div>
+        <div class="meta" id="tlsMeta"></div>
+      </section>
+
+      <section class="panel">
+        <h2 data-i="cookiesTitle">Cookie নিরাপত্তা</h2>
+        <div id="cookies"></div>
+      </section>
+
+      <section class="panel">
+        <h2 data-i="infoLeakTitle">তথ্য ফাঁস (Server header)</h2>
+        <div id="infoLeak"></div>
+      </section>
+
+      <section class="panel">
+        <h2 data-i="qualityTitle">Header মান পর্যালোচনা</h2>
+        <div id="quality"></div>
+      </section>
+
+      <section class="panel">
         <h2 data-i="limitsTitle">সীমাবদ্ধতা</h2>
         <div id="limits"></div>
       </section>
@@ -96,6 +122,16 @@ const DICT = {
     levelLabel:"Header-ভিত্তিক মাত্রা", levelCaption:"শুধু header প্রমাণের ভিত্তিতে",
     checkedLabel:"পরীক্ষিত header",
     detailsTitle:"পরীক্ষার তথ্য", findingsTitle:"Header বিশ্লেষণ",
+    tlsTitle:"SSL সার্টিফিকেট ও TLS", daysLeft:"মেয়াদ বাকি",
+    protocol:"TLS সংস্করণ", cipher:"Cipher", certExpires:"মেয়াদ শেষ হবে",
+    certMissing:"TLS তথ্য পাওয়া যায়নি (সম্ভবত redirect-এর কারণে)।",
+    cookiesTitle:"Cookie নিরাপত্তা", cookiesNone:"এই response-এ কোনো cookie সেট হয়নি।",
+    samesiteMissing:"নির্ধারিত নয়",
+    infoLeakTitle:"তথ্য ফাঁস (Server header)",
+    infoLeakNone:"সার্ভার বা framework-সনাক্তকারী header পাওয়া যায়নি।",
+    infoLeakWarn:"এই তথ্য আক্রমণকারীকে উপযুক্ত আক্রমণ বেছে নিতে সাহায্য করতে পারে।",
+    qualityTitle:"Header মান পর্যালোচনা",
+    qualityNone:"header-এর মানে উল্লেখযোগ্য দুর্বলতা পাওয়া যায়নি।",
     limitsTitle:"সীমাবদ্ধতা", rawTitle:"সম্পূর্ণ JSON রিপোর্ট", copyBtn:"JSON কপি করো",
     resultTitle:"রিপোর্টের ফলাফল", empty:"এখনো কোনো JSON রিপোর্ট নির্বাচন করা হয়নি।",
     choose:"প্রথমে একটি JSON ফাইল নির্বাচন করো।",
@@ -121,6 +157,16 @@ const DICT = {
     levelLabel:"Header-based level", levelCaption:"Based on header evidence only",
     checkedLabel:"Headers tested",
     detailsTitle:"Scan details", findingsTitle:"Header analysis",
+    tlsTitle:"SSL certificate & TLS", daysLeft:"Days remaining",
+    protocol:"TLS version", cipher:"Cipher", certExpires:"Expires at",
+    certMissing:"TLS details not available (likely a redirect).",
+    cookiesTitle:"Cookie security", cookiesNone:"No cookies were set on this response.",
+    samesiteMissing:"Not set",
+    infoLeakTitle:"Information leakage (Server header)",
+    infoLeakNone:"No server or framework-identifying headers found.",
+    infoLeakWarn:"This information can help an attacker pick a more targeted attack.",
+    qualityTitle:"Header value review",
+    qualityNone:"No notable weaknesses found in header values.",
     limitsTitle:"Limitations", rawTitle:"Full JSON report", copyBtn:"Copy JSON",
     resultTitle:"Report results", empty:"No JSON report selected yet.",
     choose:"Choose a JSON file first.",
@@ -141,7 +187,7 @@ const DICT = {
 
 let currentReport = null;
 const T = k => CS.t(k);
-const KEY_HEADERS = /^(strict-transport-security|content-security-policy)$/i;
+const KEY_HEADERS = /^(strict-transport-security|content-security-policy|x-frame-options)$/i;
 
 function el(tag, cls, text) {
   const e = document.createElement(tag);
@@ -219,6 +265,76 @@ function renderReport() {
       box.append(card);
     });
     box.append(el("p", "small muted", T("levelNote")));
+  }
+
+  const tls = data.tls && typeof data.tls === "object" && !Array.isArray(data.tls) ? data.tls : null;
+  const certDays = tls && typeof tls.certificate_days_remaining === "number"
+    ? tls.certificate_days_remaining : null;
+
+  $("certDays").textContent = certDays === null
+    ? "—" : certDays + (lang === "bn" ? " দিন" : " days");
+  $("certDays").style.color = certDays === null ? "var(--muted)"
+    : certDays < 14 ? "#ff6868" : certDays < 30 ? "#f2bc55" : "var(--accent)";
+
+  const tlsMeta = $("tlsMeta");
+  tlsMeta.replaceChildren();
+  if (tls) {
+    if (typeof tls.protocol === "string") tlsMeta.append(metaRow(T("protocol"), tls.protocol));
+    if (typeof tls.cipher === "string") tlsMeta.append(metaRow(T("cipher"), tls.cipher));
+    if (typeof tls.certificate_expires_at === "string") {
+      const d = new Date(tls.certificate_expires_at);
+      tlsMeta.append(metaRow(T("certExpires"), isNaN(d) ? tls.certificate_expires_at : d.toLocaleString()));
+    }
+  }
+  if (!tls || !tlsMeta.children.length) {
+    tlsMeta.replaceChildren(el("p", "muted", T("certMissing")));
+  }
+
+  const cookieBox = $("cookies");
+  cookieBox.replaceChildren();
+  const cookies = Array.isArray(data.cookies) ? data.cookies : [];
+  if (!cookies.length) {
+    cookieBox.append(el("p", "muted", T("cookiesNone")));
+  } else {
+    cookies.forEach(c => {
+      if (!c || typeof c !== "object" || typeof c.name !== "string") return;
+      const weak = !c.secure || !c.httponly;
+      const card = el("article", "finding " + (weak ? "low" : "ok"));
+      card.append(el("strong", "", c.name));
+      const flags = [
+        (c.secure ? "✓" : "✕") + " Secure",
+        (c.httponly ? "✓" : "✕") + " HttpOnly",
+        "SameSite: " + (typeof c.samesite === "string" && c.samesite ? c.samesite : T("samesiteMissing"))
+      ];
+      card.append(el("div", "small muted", flags.join(" · ")));
+      cookieBox.append(card);
+    });
+  }
+
+  const leakBox = $("infoLeak");
+  leakBox.replaceChildren();
+  const leaks = Array.isArray(data.info_leak) ? data.info_leak : [];
+  if (!leaks.length) {
+    leakBox.append(el("p", "muted", T("infoLeakNone")));
+  } else {
+    leaks.forEach(x => {
+      if (!x || typeof x !== "object" || typeof x.header !== "string") return;
+      const card = el("article", "finding low");
+      card.append(el("strong", "", x.header));
+      card.append(el("div", "small muted", String(x.value || "")));
+      leakBox.append(card);
+    });
+    leakBox.append(el("p", "small muted", T("infoLeakWarn")));
+  }
+
+  const qualityBox = $("quality");
+  qualityBox.replaceChildren();
+  const notes = Array.isArray(data.header_quality_notes)
+    ? data.header_quality_notes.filter(x => typeof x === "string") : [];
+  if (!notes.length) {
+    qualityBox.append(el("p", "muted", T("qualityNone")));
+  } else {
+    notes.forEach(n => qualityBox.append(el("p", "", "• " + n)));
   }
 
   const limits = $("limits");
