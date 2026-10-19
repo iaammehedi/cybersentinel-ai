@@ -13,7 +13,7 @@ var THEMES = {
 };
 
 var ICONS = {
-  shield: '<path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z"/><path d="m9 12 2 2 4-4"/>',
+  shield: '<path d="M12 2.5 20 5.5v6.1c0 5-3.4 8.3-8 10.2-4.6-1.9-8-5.2-8-10.2V5.5L12 2.5Z"/><circle cx="12" cy="10.3" r="2.7"/><path d="M12 13v3.5"/>',
   menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
   chat: '<path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/>',
   scanner: '<path d="M10 3H5a2 2 0 0 0-2 2v5"/><path d="M14 3h5a2 2 0 0 1 2 2v5"/><path d="M3 14v5a2 2 0 0 0 2 2h5"/><path d="M14 21h5a2 2 0 0 0 2-2v-5"/><circle cx="10.5" cy="10.5" r="4"/><path d="m13.5 13.5 4 4"/>',
@@ -110,7 +110,9 @@ function build() {
     html += '<a href="' + n.href + '"' + (n.id === page ? ' class="active" aria-current="page"' : "") + ">" +
             svg(ICONS[n.id]) + '<span id="nav-' + n.id + '"></span></a>';
   });
-  html += '</nav><p class="sidebar-note" id="sideNote"></p>';
+  html += '</nav>';
+  html += '<div class="sidebar-foot"><p class="sidebar-note" id="sideNote"></p>' +
+          '<button type="button" id="languageButton" class="lang-mini" aria-label="Language"></button></div>';
   aside.innerHTML = html;
 
   var overlay = document.createElement("div");
@@ -135,16 +137,16 @@ function build() {
     });
   }
 
-  var topbar = document.querySelector(".topbar");
-  if (topbar) {
-    var lb = document.createElement("button");
-    lb.type = "button";
-    lb.id = "languageButton";
-    lb.className = "language-button";
-    topbar.appendChild(lb);
-    lb.addEventListener("click", function () {
-      api.set({ language: state.language === "bn" ? "en" : "bn" });
-    });
+  $("languageButton").addEventListener("click", function () {
+    api.set({ language: state.language === "bn" ? "en" : "bn" });
+  });
+
+  if (!document.querySelector('link[rel="icon"]')) {
+    var icon = document.createElement("link");
+    icon.rel = "icon";
+    icon.type = "image/svg+xml";
+    icon.href = "/static/favicon.svg";
+    document.head.appendChild(icon);
   }
 
   overlay.addEventListener("click", closeMenu);
