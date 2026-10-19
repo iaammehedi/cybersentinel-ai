@@ -1,0 +1,112 @@
+
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#000000">
+<title>Reports | CyberSentinel AI</title>
+<style>
+:root{color-scheme:dark;--bg:#000;--panel:#101010;--line:#292929;--accent:#40E0C0;--text:#F5F7FA;--muted:#9CA3AF}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 system-ui,sans-serif}
+.layout{min-height:100vh}
+.sidebar{background:var(--panel);border-color:var(--line);padding:16px;display:flex;flex-direction:column;gap:14px}
+.brand{font-size:18px;font-weight:750}.brand span{color:var(--accent)}
+.nav{display:flex;flex-wrap:wrap;gap:8px}
+.nav a{color:var(--muted);text-decoration:none;padding:9px 11px;border-radius:9px}
+.nav a.active,.nav a:hover{color:var(--accent);background:#18201f}
+main{width:min(850px,100%);margin:auto;padding:24px 16px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:17px;margin-bottom:16px}
+h1{font-size:26px;margin:0}h2{font-size:17px;margin:0 0 8px}
+p,.muted{color:var(--muted)}
+button{border:0;border-radius:9px;padding:11px 15px;background:var(--accent);color:#001612;font:inherit;font-weight:700;cursor:pointer}
+button:disabled{opacity:.5}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+#status{color:var(--accent)}
+@media(min-width:760px){.layout.vertical{display:grid;grid-template-columns:235px minmax(0,1fr)}.layout.vertical .sidebar{border-right:1px solid var(--line);min-height:100vh}.layout.vertical .nav{flex-direction:column}.layout.horizontal .sidebar{flex-direction:row;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.layout.horizontal .nav{justify-content:flex-end}}
+@media(max-width:759px){.sidebar{border-bottom:1px solid var(--line)}.layout.vertical .nav{flex-direction:column}.layout.horizontal .nav{flex-direction:row}}
+</style>
+</head>
+<body>
+<div class="layout vertical" id="layout">
+<aside class="sidebar">
+<div class="brand">🛡️ CyberSentinel<span> AI</span></div>
+<nav class="nav">
+<a href="/">◈ Chat</a>
+<a href="/static/scanner.html">⌕ Scanner</a>
+<a href="/static/reports.html" class="active">▤ Reports</a>
+<a href="/static/history.html" id="historyLink">◷ History</a>
+<a href="/static/settings.html">⚙ Settings</a>
+</nav>
+</aside>
+<main>
+<section class="panel">
+<h1 id="title">নিরাপত্তা রিপোর্ট</h1>
+<p id="description">Scanner থেকে ডাউনলোড করা JSON রিপোর্ট এখানে খুলে দেখতে পারবে।</p>
+</section>
+<section class="panel">
+<h2 id="uploadTitle">রিপোর্ট নির্বাচন করো</h2>
+<input id="file" type="file" accept=".json,application/json">
+<div class="actions" style="margin-top:14px">
+<button id="load" type="button">রিপোর্ট দেখাও</button>
+<button id="clear" type="button">পরিষ্কার করো</button>
+</div>
+<p id="status" role="status" aria-live="polite"></p>
+</section>
+<section class="panel">
+<h2 id="resultTitle">রিপোর্টের ফলাফল</h2>
+<pre id="result">এখনো কোনো JSON রিপোর্ট নির্বাচন করা হয়নি।</pre>
+</section>
+</main>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const themes={
+deep:{bg:"#000000",panel:"#101010",line:"#292929",accent:"#40E0C0",text:"#F5F7FA",muted:"#9CA3AF"},
+midnight:{bg:"#0B1120",panel:"#141E30",line:"#2C3B50",accent:"#38D9C0",text:"#EEF5FF",muted:"#9CACC3"},
+matrix:{bg:"#020602",panel:"#091109",line:"#203520",accent:"#39FF14",text:"#E9FFE7",muted:"#9BB49A"},
+purple:{bg:"#0B0812",panel:"#15101F",line:"#352745",accent:"#A78BFA",text:"#F5F0FF",muted:"#B8AACB"},
+light:{bg:"#F4F6FA",panel:"#FFFFFF",line:"#D9E0EA",accent:"#147D71",text:"#152033",muted:"#5C6B7E"}
+};
+const text={
+bn:{title:"নিরাপত্তা রিপোর্ট",description:"Scanner থেকে ডাউনলোড করা JSON রিপোর্ট এখানে খুলে দেখতে পারবে।",uploadTitle:"রিপোর্ট নির্বাচন করো",load:"রিপোর্ট দেখাও",clear:"পরিষ্কার করো",resultTitle:"রিপোর্টের ফলাফল",empty:"এখনো কোনো JSON রিপোর্ট নির্বাচন করা হয়নি।",choose:"প্রথমে একটি JSON ফাইল নির্বাচন করো।",success:"রিপোর্ট সফলভাবে খোলা হয়েছে।",invalid:"ফাইলটি বৈধ JSON রিপোর্ট নয়।"},
+en:{title:"Security reports",description:"Open and inspect a JSON report exported from Scanner.",uploadTitle:"Choose a report",load:"View report",clear:"Clear",resultTitle:"Report results",empty:"No JSON report selected yet.",choose:"Choose a JSON file first.",success:"Report loaded successfully.",invalid:"This file is not valid JSON."}
+};
+let lang="bn";
+try{
+const p=JSON.parse(localStorage.getItem("cybersentinel.preferences")||"{}");
+if(["bn","en"].includes(p.language))lang=p.language;
+if(themes[p.theme])Object.entries(themes[p.theme]).forEach(([k,v])=>document.documentElement.style.setProperty("--"+k,v));
+if(["vertical","horizontal"].includes(p.layout))$("layout").className="layout "+p.layout;
+}catch(_){}
+function renderLanguage(){
+document.documentElement.lang=lang;
+for(const id of ["title","description","uploadTitle","resultTitle"])$(id).textContent=text[lang][id];
+$("load").textContent=text[lang].load;
+$("clear").textContent=text[lang].clear;
+if(!$("file").files.length)$("result").textContent=text[lang].empty;
+}
+$("load").addEventListener("click",async()=>{
+const file=$("file").files[0];
+if(!file){$("status").textContent=text[lang].choose;return;}
+try{
+const content=await file.text();
+const data=JSON.parse(content);
+$("result").textContent=JSON.stringify(data,null,2);
+$("status").textContent=text[lang].success;
+}catch(_){
+$("result").textContent="";
+$("status").textContent=text[lang].invalid;
+}
+});
+$("clear").addEventListener("click",()=>{
+$("file").value="";
+$("result").textContent=text[lang].empty;
+$("status").textContent="";
+});
+renderLanguage();
+</script>
+</body>
+</html>
