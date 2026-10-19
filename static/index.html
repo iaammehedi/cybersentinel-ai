@@ -405,6 +405,52 @@ $("download").addEventListener("click", () => {
   setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
 });
 
+
+function loadSharedPreferences() {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem("cybersentinel.preferences") || "{}"
+    );
+
+    const themes = {
+      deep: {
+        bg:"#000000", panel:"#101010", line:"#292929",
+        accent:"#40E0C0", text:"#F5F7FA", muted:"#9CA3AF"
+      },
+      midnight: {
+        bg:"#0B1120", panel:"#141E30", line:"#2C3B50",
+        accent:"#38D9C0", text:"#EEF5FF", muted:"#9CACC3"
+      },
+      matrix: {
+        bg:"#020602", panel:"#091109", line:"#203520",
+        accent:"#39FF14", text:"#E9FFE7", muted:"#9BB49A"
+      },
+      purple: {
+        bg:"#0B0812", panel:"#15101F", line:"#352745",
+        accent:"#A78BFA", text:"#F5F0FF", muted:"#B8AACB"
+      },
+      light: {
+        bg:"#F4F6FA", panel:"#FFFFFF", line:"#D9E0EA",
+        accent:"#147D71", text:"#152033", muted:"#5C6B7E"
+      }
+    };
+
+    const theme = themes[saved.theme] || themes.deep;
+
+    Object.entries(theme).forEach(([key, value]) => {
+      document.documentElement.style.setProperty("--" + key, value);
+    });
+
+    if (saved.language === "bn" || saved.language === "en") {
+      lang = saved.language;
+    }
+  } catch (error) {
+    console.warn("Could not load saved preferences.");
+  }
+}
+
+loadSharedPreferences();
+  
 applyLanguage();
 </script>
 </body>
