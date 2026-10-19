@@ -150,6 +150,35 @@ $("scanForm").addEventListener("submit", async e => {
    const detail = typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail || data || {});
    throw new Error(detail || "HTTP "+response.status);
   }
+
+function buildSecuritySummary(data) {
+  const findings = Array.isArray(data.findings)
+    ? data.findings
+    : [];
+
+  const total = findings.length;
+  const present = findings.filter(item => item.present).length;
+  const missing = findings.filter(item => !item.present);
+
+  const score = total > 0
+    ? Math.round((present / total) * 100)
+    : null;
+
+  return {
+    title: "Security Header Summary",
+    score,
+    score_note:
+      "এটি শুধু পরীক্ষা করা security header-এর উপস্থিতির স্কোর; পূর্ণাঙ্গ security rating নয়।",
+    headers_checked: total,
+    headers_present: present,
+    headers_missing: missing.map(item => ({
+      header: item.header,
+      recommendation: item.recommendation
+    }))
+  };
+}
+
+   
   lastReport = data;
   $("report").textContent = JSON.stringify(data,null,2);
   $("status").textContent = words[prefs.language].success;
