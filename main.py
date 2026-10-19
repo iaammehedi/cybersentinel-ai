@@ -10,7 +10,7 @@ import http.client
 from datetime import datetime, timezone
 from urllib.parse import urlsplit
 
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, StrictBool
@@ -71,7 +71,29 @@ HEADERS_TO_CHECK = {
     "referrer-policy":
         "উপযুক্ত Referrer-Policy কনফিগার করুন.",
     "permissions-policy":
-        "অপ্রয়োজনীয় browser feature সীমিত করুন.",
+        "অপ্রয়োজনীয় browser feature সীমিত করুন.",
+}
+
+
+# Security headers sent with every response of THIS application.
+# The pages use inline <script>/<style>, so 'unsafe-inline' is needed
+# until those are moved into separate files.
+SECURITY_HEADERS = {
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "Content-Security-Policy": (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; "
+        "connect-src 'self'; "
+        "base-uri 'none'; "
+        "form-action 'self'; "
+        "frame-ancestors 'none'"
+    ),
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
 }
 
 
@@ -79,6 +101,85 @@ audit_log = []
 last_scan_time = 0.0
 scan_lock = threading.Lock()
 audit_lock = threading.Lock()
+
+# Failed-token attempt limiter (in memory, resets on restart).
+FAIL_LIMIT = 10          # wrong tokens allowed ...
+FAIL_WINDOW = 300.0      # ... per 5 minutes, per client
+failed_attempts: dict[str, list[float]] = {}
+fail_lock = threading.Lock()
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+
+    for name, value in SECURITY_HEADERS.items():
+        response.headers.setdefault(name, value)
+
+    if request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
+
+    return response
+
+
+def client_key(request: Request) -> str:
+    # Behind Render's proxy the real client is in X-Forwarded-For.
+    # The last entry is the one added by the trusted proxy.
+    forwarded = request.headers.get("x-forwarded-for", "")
+    if forwarded:
+        return forwarded.split(",")[-1].strip()[:64] or "unknown"
+
+    return request.client.host if request.client else "unknown"
+
+
+def require_token(request: Request, supplied: str) -> None:
+    """Check the scan token; limit repeated wrong guesses."""
+    key = client_key(request)
+    now = time.monotonic()
+    blocked = False
+    valid = False
+
+    with fail_lock:
+        recent = [
+            t for t in failed_attempts.get(key, [])
+            if now - t < FAIL_WINDOW
+        ]
+
+        if len(recent) >= FAIL_LIMIT:
+            blocked = True
+        else:
+            # Compare as bytes: str comparison raises on non-ASCII input.
+            valid = secrets.compare_digest(
+                supplied.encode("utf-8"),
+                SCAN_TOKEN.encode("utf-8"),
+            )
+            if not valid:
+                recent.append(now)
+
+        if recent:
+            failed_attempts[key] = recent
+        else:
+            failed_attempts.pop(key, None)
+
+        # Keep memory bounded.
+        if len(failed_attempts) > 1000:
+            for k in list(failed_attempts):
+                failed_attempts[k] = [
+                    t for t in failed_attempts[k]
+                    if now - t < FAIL_WINDOW
+                ]
+                if not failed_attempts[k]:
+                    del failed_attempts[k]
+
+    if blocked:
+        raise HTTPException(
+            429,
+            "অনেকবার ভুল token দেওয়া হয়েছে; কিছুক্ষণ পরে চেষ্টা করো.",
+            headers={"Retry-After": str(int(FAIL_WINDOW))},
+        )
+
+    if not valid:
+        raise HTTPException(401, "অনুমোদিত token প্রয়োজন.")
 
 
 class ScanRequest(BaseModel):
@@ -103,7 +204,7 @@ def validate_target(url: str) -> tuple[str, str]:
 
     if parsed.username or parsed.password:
         raise HTTPException(
-            400, "URL-এ credentials অনুমোদিত নয়."
+            400, "URL-এ credentials অনুমোদিত নয়."
         )
 
     try:
@@ -112,7 +213,7 @@ def validate_target(url: str) -> tuple[str, str]:
                 400, "শুধু HTTPS port 443 অনুমোদিত."
             )
     except ValueError:
-        raise HTTPException(400, "URL-এর port সঠিক নয়.")
+        raise HTTPException(400, "URL-এর port সঠিক নয়.")
 
     if parsed.path not in ("", "/"):
         raise HTTPException(
@@ -122,17 +223,17 @@ def validate_target(url: str) -> tuple[str, str]:
     if parsed.query or parsed.fragment:
         raise HTTPException(
             400,
-            "প্রথম সংস্করণে query ও fragment অনুমোদিত নয়."
+            "প্রথম সংস্করণে query ও fragment অনুমোদিত নয়."
         )
 
     try:
         host = canonical_host(parsed.hostname)
     except (ValueError, UnicodeError):
-        raise HTTPException(400, "Domain নামটি সঠিক নয়.")
+        raise HTTPException(400, "Domain নামটি সঠিক নয়.")
 
     if host not in ALLOWED_HOSTS:
         raise HTTPException(
-            403, "এই domain অনুমোদিত তালিকায় নেই."
+            403, "এই domain অনুমোদিত তালিকায় নেই."
         )
 
     # Reject IP literals: this version accepts allowlisted
@@ -140,7 +241,7 @@ def validate_target(url: str) -> tuple[str, str]:
     try:
         ipaddress.ip_address(host)
         raise HTTPException(
-            400, "IP address নয়, অনুমোদিত domain ব্যবহার করো."
+            400, "IP address নয়, অনুমোদিত domain ব্যবহার করো."
         )
     except ValueError:
         pass
@@ -165,7 +266,7 @@ def validate_target(url: str) -> tuple[str, str]:
             if not ip.is_global:
                 raise HTTPException(
                     403,
-                    "Domain non-public IP-তে resolve হয়েছে."
+                    "Domain non-public IP-তে resolve হয়েছে."
                 )
 
             public_ips.append(str(ip))
@@ -176,7 +277,7 @@ def validate_target(url: str) -> tuple[str, str]:
         raise
     except Exception:
         raise HTTPException(
-            400, "Domain DNS যাচাই করা যায়নি."
+            400, "Domain DNS যাচাই করা যায়নি."
         )
 
     return host, pinned_ip
@@ -219,6 +320,8 @@ def run_check(host: str, pinned_ip: str) -> dict:
 
     try:
         # Request only the root path; never follow redirects.
+        # Only the status line and headers are read; the response
+        # body is never downloaded.
         connection.request(
             "GET",
             "/",
@@ -241,11 +344,11 @@ def run_check(host: str, pinned_ip: str) -> dict:
                 ).isoformat(),
                 "status": status,
                 "redirect_followed": False,
-                "note": "Redirect অনুসরণ করা হয়নি.",
+                "note": "Redirect অনুসরণ করা হয়নি.",
                 "findings": [],
                 "limitations": [
                     "এটি সীমিত passive header check.",
-                    "Redirect-এর গন্তব্য পরীক্ষা করা হয়নি.",
+                    "Redirect-এর গন্তব্য পরীক্ষা করা হয়নি.",
                 ],
             }
 
@@ -262,7 +365,7 @@ def run_check(host: str, pinned_ip: str) -> dict:
                 ),
                 "recommendation": (
                     advice if not present else
-                    "Header পাওয়া গেছে; এর মান ও কার্যকারিতা যাচাই করুন."
+                    "Header পাওয়া গেছে; এর মান ও কার্যকারিতা যাচাই করুন."
                 ),
             })
 
@@ -275,10 +378,10 @@ def run_check(host: str, pinned_ip: str) -> dict:
             "redirect_followed": False,
             "findings": findings,
             "limitations": [
-                "এটি সীমিত passive header check, পূর্ণ penetration test নয়.",
+                "এটি সীমিত passive header check, পূর্ণ penetration test নয়.",
                 "Header অনুপস্থিত থাকা একাই vulnerability প্রমাণ করে না.",
-                "কোনো exploit বা login attempt চালানো হয়নি.",
-                "শুধু domain-এর root path পরীক্ষা করা হয়েছে.",
+                "কোনো exploit বা login attempt চালানো হয়নি.",
+                "শুধু domain-এর root path পরীক্ষা করা হয়েছে.",
             ],
         }
 
@@ -311,14 +414,12 @@ def health():
 @app.post("/api/scan")
 def scan(
     data: ScanRequest,
+    request: Request,
     x_scan_token: str = Header(default=""),
 ):
     global last_scan_time
 
-    if not secrets.compare_digest(x_scan_token, SCAN_TOKEN):
-        raise HTTPException(
-            401, "অনুমোদিত token প্রয়োজন."
-        )
+    require_token(request, x_scan_token)
 
     if data.confirm_authorized is not True:
         raise HTTPException(
@@ -346,7 +447,7 @@ def scan(
         report = run_check(host, pinned_ip)
     except (OSError, ssl.SSLError, http.client.HTTPException):
         raise HTTPException(
-            502, "পরীক্ষা ব্যর্থ হয়েছে; ফলাফল নিশ্চিত নয়."
+            502, "পরীক্ষা ব্যর্থ হয়েছে; ফলাফল নিশ্চিত নয়."
         )
 
     with audit_lock:
@@ -362,12 +463,10 @@ def scan(
 
 @app.get("/api/audit")
 def get_audit(
+    request: Request,
     x_scan_token: str = Header(default=""),
 ):
-    if not secrets.compare_digest(x_scan_token, SCAN_TOKEN):
-        raise HTTPException(
-            401, "অনুমোদিত token প্রয়োজন."
-        )
+    require_token(request, x_scan_token)
 
     with audit_lock:
         return {"events": list(audit_log)}
