@@ -179,8 +179,14 @@ function buildSecuritySummary(data) {
 }
 
    
-  lastReport = data;
-  $("report").textContent = JSON.stringify(data,null,2);
+  const summary = buildSecuritySummary(data);
+const displayReport = {
+  ...data,
+  security_summary: summary
+};
+
+lastReport = displayReport;
+$("report").textContent = JSON.stringify(displayReport, null, 2);
   $("status").textContent = words[prefs.language].success;
   $("download").disabled = false;
  } try {
