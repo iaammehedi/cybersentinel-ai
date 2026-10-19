@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="bn">
 <head>
@@ -6,117 +5,170 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#000000">
 <title>History | CyberSentinel AI</title>
-<style>
-:root{color-scheme:dark;--bg:#000;--panel:#101010;--line:#292929;--accent:#40E0C0;--text:#F5F7FA;--muted:#9CA3AF}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 system-ui,sans-serif}
-.layout{min-height:100vh}
-.sidebar{background:var(--panel);border-color:var(--line);padding:16px;display:flex;flex-direction:column;gap:14px}
-.brand{font-size:18px;font-weight:750}.brand span{color:var(--accent)}
-.nav{display:flex;flex-wrap:wrap;gap:8px}
-.nav a{color:var(--muted);text-decoration:none;padding:9px 11px;border-radius:9px}
-.nav a.active,.nav a:hover{color:var(--accent);background:#18201f}
-main{width:min(850px,100%);margin:auto;padding:24px 16px}
-.panel,.item{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:17px;margin-bottom:16px}
-h1{font-size:26px;margin:0}h2{font-size:17px;margin:0 0 8px}
-p,.muted{color:var(--muted)}
-button{border:1px solid var(--line);border-radius:9px;padding:10px 13px;background:var(--bg);color:var(--text);font:inherit;cursor:pointer}
-button.primary{background:var(--accent);color:#001612;border:0;font-weight:700}
-.item pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:260px;overflow:auto}
-.actions{display:flex;gap:8px;flex-wrap:wrap}
-#status{color:var(--accent)}
-@media(min-width:760px){.layout.vertical{display:grid;grid-template-columns:235px minmax(0,1fr)}.layout.vertical .sidebar{border-right:1px solid var(--line);min-height:100vh}.layout.vertical .nav{flex-direction:column}.layout.horizontal .sidebar{flex-direction:row;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.layout.horizontal .nav{justify-content:flex-end}}
-@media(max-width:759px){.sidebar{border-bottom:1px solid var(--line)}.layout.vertical .nav{flex-direction:column}.layout.horizontal .nav{flex-direction:row}}
-</style>
+<link rel="stylesheet" href="/static/shared.css">
+<script src="/static/shared.js"></script>
 </head>
-<body>
+<body data-page="history">
 <div class="layout vertical" id="layout">
-<aside class="sidebar">
-<div class="brand">🛡️ CyberSentinel<span> AI</span></div>
-<nav class="nav">
-<a href="/">◈ Chat</a>
-<a href="/static/scanner.html">⌕ Scanner</a>
-<a href="/static/reports.html">▤ Reports</a>
-<a href="/static/history.html" class="active">◷ History</a>
-<a href="/static/settings.html">⚙ Settings</a>
-</nav>
-</aside>
-<main>
-<section class="panel">
-<h1 id="title">পরীক্ষার ইতিহাস</h1>
-<p id="desc">এই ব্রাউজারে সংরক্ষিত রিপোর্টগুলো এখানে দেখা যাবে।</p>
-<div class="actions">
-<button class="primary" id="export">ইতিহাস Export</button>
-<button id="clear">ইতিহাস মুছুন</button>
+  <main>
+    <header class="topbar">
+      <div class="top-left">
+        <div>
+          <h1 data-i="title">পরীক্ষার ইতিহাস</h1>
+          <div class="muted small" data-i="subtitle">এই ব্রাউজারে সংরক্ষিত</div>
+        </div>
+      </div>
+    </header>
+
+    <section class="panel">
+      <p data-i="desc">এই ব্রাউজারে সংরক্ষিত রিপোর্টগুলো এখানে দেখা যাবে। এগুলো সার্ভারে সংরক্ষিত নয়; ব্রাউজারের ডাটা মুছলে ইতিহাসও মুছে যাবে।</p>
+      <div class="actions">
+        <button class="primary" id="export" type="button" data-i="exportBtn">ইতিহাস Export</button>
+        <button id="clear" type="button" data-i="clearBtn">ইতিহাস মুছুন</button>
+      </div>
+      <p id="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="entries"></section>
+  </main>
 </div>
-<p id="status" role="status" aria-live="polite"></p>
-</section>
-<section id="entries"></section>
-</main>
-</div>
+
 <script>
-const $=id=>document.getElementById(id);
-const themes={
-deep:{bg:"#000000",panel:"#101010",line:"#292929",accent:"#40E0C0",text:"#F5F7FA",muted:"#9CA3AF"},
-midnight:{bg:"#0B1120",panel:"#141E30",line:"#2C3B50",accent:"#38D9C0",text:"#EEF5FF",muted:"#9CACC3"},
-matrix:{bg:"#020602",panel:"#091109",line:"#203520",accent:"#39FF14",text:"#E9FFE7",muted:"#9BB49A"},
-purple:{bg:"#0B0812",panel:"#15101F",line:"#352745",accent:"#A78BFA",text:"#F5F0FF",muted:"#B8AACB"},
-light:{bg:"#F4F6FA",panel:"#FFFFFF",line:"#D9E0EA",accent:"#147D71",text:"#152033",muted:"#5C6B7E"}
+"use strict";
+const $ = id => document.getElementById(id);
+const HKEY = "cybersentinel.history";
+
+const DICT = {
+  bn: {
+    title:"পরীক্ষার ইতিহাস", subtitle:"এই ব্রাউজারে সংরক্ষিত",
+    desc:"এই ব্রাউজারে সংরক্ষিত রিপোর্টগুলো এখানে দেখা যাবে। এগুলো সার্ভারে সংরক্ষিত নয়; ব্রাউজারের ডাটা মুছলে ইতিহাসও মুছে যাবে।",
+    exportBtn:"ইতিহাস Export", clearBtn:"ইতিহাস মুছুন",
+    empty:"এখনো কোনো রিপোর্টের ইতিহাস নেই।",
+    deleted:"ইতিহাস মুছে ফেলা হয়েছে।",
+    confirm:"তুমি কি সব ইতিহাস মুছে ফেলতে চাও?",
+    openReport:"Reports-এ দেখো", showJson:"JSON দেখাও", hideJson:"JSON লুকাও", remove:"মুছুন",
+    nothingToExport:"Export করার মতো ইতিহাস নেই।",
+    storageError:"পরিবর্তন সংরক্ষণ করা যায়নি।"
+  },
+  en: {
+    title:"Scan history", subtitle:"Saved in this browser",
+    desc:"Reports saved in this browser appear here. They are not stored on the server; clearing browser data also clears this history.",
+    exportBtn:"Export history", clearBtn:"Clear history",
+    empty:"No report history yet.",
+    deleted:"History cleared.",
+    confirm:"Delete all history?",
+    openReport:"View in Reports", showJson:"Show JSON", hideJson:"Hide JSON", remove:"Delete",
+    nothingToExport:"There is no history to export.",
+    storageError:"Could not save the change."
+  }
 };
-const copy={
-bn:{title:"পরীক্ষার ইতিহাস",desc:"এই ব্রাউজারে সংরক্ষিত রিপোর্টগুলো এখানে দেখা যাবে।",export:"ইতিহাস Export",clear:"ইতিহাস মুছুন",empty:"এখনো কোনো রিপোর্টের ইতিহাস নেই।",saved:"রিপোর্টের ইতিহাস সংরক্ষিত হয়েছে।",deleted:"ইতিহাস মুছে ফেলা হয়েছে।",confirm:"তুমি কি সব ইতিহাস মুছে ফেলতে চাও?",view:"রিপোর্ট দেখো",remove:"মুছুন",failed:"ইতিহাস লোড করা যায়নি।"},
-en:{title:"Scan history",desc:"Reports saved in this browser appear here.",export:"Export history",clear:"Clear history",empty:"No report history yet.",saved:"Report history saved.",deleted:"History cleared.",confirm:"Delete all history?",view:"View report",remove:"Delete",failed:"Could not load history."}
-};
-let lang="bn";
-try{
-const p=JSON.parse(localStorage.getItem("cybersentinel.preferences")||"{}");
-if(["bn","en"].includes(p.language))lang=p.language;
-if(themes[p.theme])Object.entries(themes[p.theme]).forEach(([k,v])=>document.documentElement.style.setProperty("--"+k,v));
-if(["vertical","horizontal"].includes(p.layout))$("layout").className="layout "+p.layout;
-}catch(_){}
-function getHistory(){
-try{
-const data=JSON.parse(localStorage.getItem("cybersentinel.history")||"[]");
-return Array.isArray(data)?data:[];
-}catch(_){return [];}
+
+const T = k => CS.t(k);
+
+function getHistory() {
+  try {
+    const data = JSON.parse(localStorage.getItem(HKEY) || "[]");
+    return Array.isArray(data) ? data : [];
+  } catch (_) { return []; }
 }
-function saveHistory(data){localStorage.setItem("cybersentinel.history",JSON.stringify(data));}
-function render(){
-const c=copy[lang];
-document.documentElement.lang=lang;
-$("title").textContent=c.title;
-$("desc").textContent=c.desc;
-$("export").textContent=c.export;
-$("clear").textContent=c.clear;
-const entries=$("entries");
-entries.replaceChildren();
-const data=getHistory();
-if(!data.length){const p=document.createElement("p");p.className="muted";p.textContent=c.empty;entries.append(p);return;}
-data.forEach((item,index)=>{
-const card=document.createElement("article");card.className="item";
-const heading=document.createElement("h2");heading.textContent=item.title||("Report "+(index+1));
-const date=document.createElement("p");date.className="muted";date.textContent=item.date||"";
-const pre=document.createElement("pre");pre.textContent=JSON.stringify(item.report,null,2);
-const actions=document.createElement("div");actions.className="actions";
-const view=document.createElement("button");view.className="primary";view.textContent=c.view;
-view.addEventListener("click",()=>{pre.hidden=!pre.hidden;});
-const remove=document.createElement("button");remove.textContent=c.remove;
-remove.addEventListener("click",()=>{const next=getHistory();next.splice(index,1);saveHistory(next);render();});
-actions.append(view,remove);card.append(heading,date,pre,actions);entries.append(card);
-});
+
+function saveHistory(data) {
+  try { localStorage.setItem(HKEY, JSON.stringify(data)); return true; }
+  catch (_) { $("status").textContent = T("storageError"); return false; }
 }
-$("clear").addEventListener("click",()=>{
-if(!confirm(copy[lang].confirm))return;
-localStorage.removeItem("cybersentinel.history");
-$("status").textContent=copy[lang].deleted;render();
+
+function formatDate(value) {
+  if (typeof value !== "string" || !value) return "";
+  const d = new Date(value);
+  return isNaN(d) ? value : d.toLocaleString();
+}
+
+function render() {
+  const box = $("entries");
+  box.replaceChildren();
+  const data = getHistory();
+
+  if (!data.length) {
+    const p = document.createElement("p");
+    p.textContent = T("empty");
+    box.append(p);
+    return;
+  }
+
+  data.forEach((raw, index) => {
+    const item = raw && typeof raw === "object" ? raw : {};
+    const card = document.createElement("article");
+    card.className = "item";
+
+    const h = document.createElement("h2");
+    h.textContent = typeof item.title === "string" && item.title ? item.title : "Report " + (index + 1);
+
+    const date = document.createElement("p");
+    date.textContent = formatDate(item.date);
+
+    const pre = document.createElement("pre");
+    pre.className = "hidden";
+    pre.textContent = JSON.stringify(item.report, null, 2);
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+
+    const open = document.createElement("button");
+    open.type = "button";
+    open.className = "primary";
+    open.textContent = T("openReport");
+    open.disabled = !(item.report && typeof item.report === "object");
+    open.addEventListener("click", () => {
+      try { sessionStorage.setItem("cybersentinel.openReport", JSON.stringify(item.report)); } catch (_) {}
+      location.href = "/static/reports.html";
+    });
+
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.textContent = T("showJson");
+    toggle.addEventListener("click", () => {
+      const hidden = pre.classList.toggle("hidden");
+      toggle.textContent = hidden ? T("showJson") : T("hideJson");
+    });
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = T("remove");
+    remove.addEventListener("click", () => {
+      const next = getHistory();
+      next.splice(index, 1);
+      if (saveHistory(next)) $("status").textContent = "";
+      render();
+    });
+
+    actions.append(open, toggle, remove);
+    card.append(h, date, pre, actions);
+    box.append(card);
+  });
+}
+
+CS.init({ dict: DICT, onChange: render });
+
+$("clear").addEventListener("click", () => {
+  if (!confirm(T("confirm"))) return;
+  try { localStorage.removeItem(HKEY); } catch (_) {}
+  $("status").textContent = T("deleted");
+  render();
 });
-$("export").addEventListener("click",()=>{
-const blob=new Blob([JSON.stringify(getHistory(),null,2)],{type:"application/json"});
-const url=URL.createObjectURL(blob);
-const a=document.createElement("a");a.href=url;a.download="cybersentinel-history.json";a.click();
-setTimeout(()=>URL.revokeObjectURL(url),1000);
+
+$("export").addEventListener("click", () => {
+  const data = getHistory();
+  if (!data.length) { $("status").textContent = T("nothingToExport"); return; }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "cybersentinel-history.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
-render();
 </script>
 </body>
 </html>
