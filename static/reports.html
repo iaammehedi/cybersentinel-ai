@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="bn">
 <head>
@@ -6,730 +5,299 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#000000">
 <title>Reports | CyberSentinel AI</title>
-<style>
-:root {
-  color-scheme: dark;
-  --bg:#000;
-  --panel:#101010;
-  --line:#292929;
-  --accent:#40E0C0;
-  --text:#F5F7FA;
-  --muted:#9CA3AF;
-}
-*{box-sizing:border-box}
-body{
-  margin:0;background:var(--bg);color:var(--text);
-  font:15px/1.6 system-ui,sans-serif
-}
-.layout{min-height:100vh}
-.sidebar{
-  background:var(--panel);border-color:var(--line);
-  padding:16px;display:flex;flex-direction:column;gap:14px
-}
-.brand{font-size:18px;font-weight:750}
-.brand span{color:var(--accent)}
-.nav{display:flex;flex-wrap:wrap;gap:8px}
-.nav a{
-  color:var(--muted);text-decoration:none;
-  padding:9px 11px;border-radius:9px
-}
-.nav a.active,.nav a:hover{
-  color:var(--accent);background:#18201f
-}
-main{width:min(1000px,100%);margin:auto;padding:24px 16px}
-.panel{
-  background:var(--panel);border:1px solid var(--line);
-  border-radius:15px;padding:18px;margin-bottom:16px;
-  min-width:0
-}
-h1{font-size:26px;margin:0}
-h2{font-size:17px;margin:0 0 10px}
-p,.muted{color:var(--muted)}
-button,.file-button{
-  display:inline-block;border:0;border-radius:9px;
-  padding:11px 15px;background:var(--accent);
-  color:#001612;font:inherit;font-weight:700;cursor:pointer
-}
-button.secondary,.file-button.secondary{
-  background:#202525;color:var(--text);
-  border:1px solid var(--line)
-}
-button:disabled{opacity:.5;cursor:not-allowed}
-input[type=file]{
-  display:block;width:100%;margin:12px 0;
-  padding:12px;background:#080808;color:var(--text);
-  border:1px solid var(--line);border-radius:9px
-}
-.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-.stats{
-  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:12px;margin-bottom:16px
-}
-.stat{
-  background:var(--panel);border:1px solid var(--line);
-  border-radius:13px;padding:16px;min-width:0
-}
-.stat-label{color:var(--muted);font-size:13px}
-.stat-value{font-size:27px;font-weight:800;overflow-wrap:anywhere}
-#score{color:var(--accent)}
-#risk{color:var(--muted)}
-#status{color:var(--accent);overflow-wrap:anywhere}
-#summaryText{overflow-wrap:anywhere}
-.finding{
-  padding:12px;border:1px solid var(--line);
-  border-radius:10px;margin:9px 0;
-  overflow-wrap:anywhere
-}
-.finding strong{display:block;margin-bottom:4px}
-.finding small{color:var(--muted)}
-.finding.high{border-left:3px solid #ff6868}
-.finding.medium{border-left:3px solid #f2bc55}
-.finding.low{border-left:3px solid var(--accent)}
-.finding.info{border-left:3px solid #779fff}
-pre{
-  white-space:pre-wrap;overflow-wrap:anywhere;
-  font-size:12px;max-height:500px;overflow:auto;
-  background:#080808;padding:14px;border-radius:9px
-}
-.empty{color:var(--muted)}
-.hidden{display:none!important}
-@media(min-width:760px){
-  .layout.vertical{display:grid;grid-template-columns:235px minmax(0,1fr)}
-  .layout.vertical .sidebar{
-    border-right:1px solid var(--line);min-height:100vh
-  }
-  .layout.vertical .nav{flex-direction:column}
-  .layout.horizontal .sidebar{
-    flex-direction:row;align-items:center;justify-content:space-between;
-    border-bottom:1px solid var(--line)
-  }
-  .layout.horizontal .nav{justify-content:flex-end}
-}
-@media(max-width:759px){
-  .sidebar{border-bottom:1px solid var(--line)}
-  .layout.vertical .nav{flex-direction:column}
-  .layout.horizontal .nav{flex-direction:row}
-  .stats{grid-template-columns:1fr}
-  main{padding:16px 12px}
-}
-</style>
+<link rel="stylesheet" href="/static/shared.css">
+<script src="/static/shared.js"></script>
 </head>
-<body>
+<body data-page="reports">
 <div class="layout vertical" id="layout">
-
-<aside class="sidebar">
-  <div class="brand">🛡️ CyberSentinel<span> AI</span></div>
-  <nav class="nav" aria-label="Main navigation">
-    <a href="/">◈ Chat</a>
-    <a href="/static/scanner.html">⌕ Scanner</a>
-    <a href="/static/reports.html" class="active">▤ Reports</a>
-    <a href="/static/history.html" id="historyLink">◷ History</a>
-    <a href="/static/settings.html">⚙ Settings</a>
-  </nav>
-</aside>
-
-<main>
-  <section class="panel">
-    <h1 id="title">নিরাপত্তা রিপোর্ট</h1>
-    <p id="description">
-      Scanner থেকে পাওয়া JSON রিপোর্ট বিশ্লেষণ করে নিরাপত্তার সারাংশ দেখো।
-    </p>
-  </section>
-
-  <section class="panel">
-    <h2 id="uploadTitle">JSON রিপোর্ট নির্বাচন করো</h2>
-    <p id="uploadDescription">
-      Scanner থেকে Export করা JSON ফাইল নির্বাচন করো।
-    </p>
-    <input id="file" type="file" accept=".json,application/json">
-    <div class="actions">
-      <button id="load" type="button">রিপোর্ট বিশ্লেষণ</button>
-      <button id="export" type="button" class="secondary" disabled>
-        JSON ডাউনলোড
-      </button>
-      <button id="clear" type="button" class="secondary">
-        পরিষ্কার করো
-      </button>
-    </div>
-    <p id="status" role="status" aria-live="polite"></p>
-  </section>
-
-  <section id="dashboard" class="hidden">
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-label" id="scoreLabel">Security Score</div>
-        <div class="stat-value" id="score">—</div>
-        <div class="muted" id="scoreCaption">১০০-এর মধ্যে</div>
+  <main>
+    <header class="topbar">
+      <div class="top-left">
+        <div>
+          <h1 data-i="title">নিরাপত্তা রিপোর্ট</h1>
+          <div class="muted small" data-i="subtitle">Scanner-এর JSON রিপোর্ট বিশ্লেষণ</div>
+        </div>
       </div>
-      <div class="stat">
-        <div class="stat-label" id="riskLabel">Risk Level</div>
-        <div class="stat-value" id="risk">—</div>
-        <div class="muted" id="riskCaption">রিপোর্টের ভিত্তিতে</div>
-      </div>
-      <div class="stat">
-        <div class="stat-label" id="findingLabel">Findings</div>
-        <div class="stat-value" id="findingCount">0</div>
-        <div class="muted" id="findingCaption">শনাক্ত করা বিষয়</div>
-      </div>
-    </div>
+    </header>
 
     <section class="panel">
-      <h2 id="summaryTitle">Risk Summary</h2>
-      <p id="summaryText"></p>
-    </section>
-
-    <section class="panel">
-      <h2 id="findingsTitle">Security Findings</h2>
-      <div id="findings"></div>
-    </section>
-
-    <section class="panel">
-      <h2 id="rawTitle">Raw JSON Report</h2>
-      <pre id="result"></pre>
+      <h2 data-i="uploadTitle">JSON রিপোর্ট নির্বাচন করো</h2>
+      <p data-i="uploadDescription">Scanner থেকে ডাউনলোড করা JSON ফাইল নির্বাচন করো।</p>
+      <input id="file" type="file" accept=".json,application/json">
       <div class="actions">
-        <button id="copy" type="button" class="secondary">JSON কপি করো</button>
+        <button id="load" type="button" class="primary" data-i="load">রিপোর্ট বিশ্লেষণ</button>
+        <button id="export" type="button" disabled data-i="exportBtn">JSON ডাউনলোড</button>
+        <button id="clear" type="button" data-i="clearBtn">পরিষ্কার করো</button>
       </div>
+      <p id="status" role="status" aria-live="polite"></p>
     </section>
-  </section>
 
-  <section id="emptyPanel" class="panel">
-    <h2 id="resultTitle">রিপোর্টের ফলাফল</h2>
-    <p class="empty" id="emptyText">
-      এখনো কোনো JSON রিপোর্ট নির্বাচন করা হয়নি।
-    </p>
-  </section>
-</main>
+    <section id="dashboard" class="hidden">
+      <div class="stats">
+        <div class="stat">
+          <div class="muted small" data-i="coverageLabel">Header উপস্থিতির হার</div>
+          <div class="stat-value" id="coverage">—</div>
+          <div class="muted small" data-i="coverageCaption">পরীক্ষিত header-এর মধ্যে উপস্থিত</div>
+        </div>
+        <div class="stat">
+          <div class="muted small" data-i="levelLabel">Header-ভিত্তিক মাত্রা</div>
+          <div class="stat-value" id="level">—</div>
+          <div class="muted small" data-i="levelCaption">শুধু header প্রমাণের ভিত্তিতে</div>
+        </div>
+        <div class="stat">
+          <div class="muted small" data-i="checkedLabel">পরীক্ষিত header</div>
+          <div class="stat-value" id="checked">0</div>
+          <div class="muted small" id="checkedCaption"></div>
+        </div>
+      </div>
+
+      <section class="panel">
+        <h2 data-i="detailsTitle">পরীক্ষার তথ্য</h2>
+        <div class="meta" id="meta"></div>
+      </section>
+
+      <section class="panel">
+        <h2 data-i="findingsTitle">Header বিশ্লেষণ</h2>
+        <div id="findings"></div>
+      </section>
+
+      <section class="panel">
+        <h2 data-i="limitsTitle">সীমাবদ্ধতা</h2>
+        <div id="limits"></div>
+      </section>
+
+      <section class="panel">
+        <h2 data-i="rawTitle">সম্পূর্ণ JSON রিপোর্ট</h2>
+        <pre id="result"></pre>
+        <div class="actions">
+          <button id="copy" type="button" data-i="copyBtn">JSON কপি করো</button>
+        </div>
+      </section>
+    </section>
+
+    <section id="emptyPanel" class="panel">
+      <h2 data-i="resultTitle">রিপোর্টের ফলাফল</h2>
+      <p id="emptyText" data-i="empty">এখনো কোনো JSON রিপোর্ট নির্বাচন করা হয়নি।</p>
+    </section>
+  </main>
 </div>
 
 <script>
 "use strict";
-
 const $ = id => document.getElementById(id);
 
-const themes = {
-  deep: {
-    bg:"#000000",panel:"#101010",line:"#292929",
-    accent:"#40E0C0",text:"#F5F7FA",muted:"#9CA3AF"
-  },
-  midnight: {
-    bg:"#0B1120",panel:"#141E30",line:"#2C3B50",
-    accent:"#38D9C0",text:"#EEF5FF",muted:"#9CACC3"
-  },
-  matrix: {
-    bg:"#020602",panel:"#091109",line:"#203520",
-    accent:"#39FF14",text:"#E9FFE7",muted:"#9BB49A"
-  },
-  purple: {
-    bg:"#0B0812",panel:"#15101F",line:"#352745",
-    accent:"#A78BFA",text:"#F5F0FF",muted:"#B8AACB"
-  },
-  light: {
-    bg:"#F4F6FA",panel:"#FFFFFF",line:"#D9E0EA",
-    accent:"#147D71",text:"#152033",muted:"#5C6B7E"
-  }
-};
-
-const words = {
+const DICT = {
   bn: {
-    title:"নিরাপত্তা রিপোর্ট",
-    description:"JSON রিপোর্ট বিশ্লেষণ করে নিরাপত্তার সারাংশ দেখো।",
+    title:"নিরাপত্তা রিপোর্ট", subtitle:"Scanner-এর JSON রিপোর্ট বিশ্লেষণ",
     uploadTitle:"JSON রিপোর্ট নির্বাচন করো",
-    uploadDescription:"Scanner থেকে Export করা JSON ফাইল নির্বাচন করো।",
-    load:"রিপোর্ট বিশ্লেষণ",export:"JSON ডাউনলোড",
-    clear:"পরিষ্কার করো",choose:"প্রথমে একটি JSON ফাইল নির্বাচন করো।",
-    success:"রিপোর্ট বিশ্লেষণ সম্পন্ন হয়েছে।",
-    invalid:"ফাইলটি বৈধ JSON নয় অথবা পড়া যায়নি।",
-    scoreLabel:"নিরাপত্তা স্কোর",scoreCaption:"১০০-এর মধ্যে",
-    riskLabel:"ঝুঁকির মাত্রা",riskCaption:"প্রাপ্ত তথ্যের ভিত্তিতে",
-    findingLabel:"Findings",findingCaption:"শনাক্ত করা বিষয়",
-    summaryTitle:"ঝুঁকির সারাংশ",findingsTitle:"নিরাপত্তা বিশ্লেষণ",
-    rawTitle:"সম্পূর্ণ JSON রিপোর্ট",copy:"JSON কপি করো",
-    copied:"JSON কপি হয়েছে।",
-    copyError:"কপি করা যায়নি। JSON থেকে নিজে কপি করো।",
-    empty:"এখনো কোনো JSON রিপোর্ট নির্বাচন করা হয়নি।",
-    noFindings:"রিপোর্টে আলাদা কোনো finding পাওয়া যায়নি।",
-    low:"কম ঝুঁকি",medium:"মাঝারি ঝুঁকি",high:"উচ্চ ঝুঁকি",
-    unknown:"যথেষ্ট তথ্য নেই",
-    noHeader:"Security header অনুপস্থিত বা নিশ্চিত করা যায়নি",
-    headerPresent:"Security header পাওয়া গেছে",
-    recommendations:"পরামর্শ",
-    notTest:"এটি প্রাথমিক header-ভিত্তিক মূল্যায়ন; পূর্ণাঙ্গ security test নয়।",
-    malformed:"রিপোর্টের গঠন থেকে নির্ভরযোগ্য স্কোর হিসাব করা যায়নি।",
-    fileTooLarge:"ফাইলটি খুব বড়। ২ MB-এর কম JSON ফাইল ব্যবহার করো।",
-    riskText:"রিপোর্টের তথ্যের ভিত্তিতে ঝুঁকি মূল্যায়ন করা হয়েছে।",
-    scoreUnknown:"যথেষ্ট যাচাইযোগ্য তথ্য নেই",
-    details:"বিস্তারিত",
-    header:"Header",
-    present:"উপস্থিত",
-    missing:"অনুপস্থিত",
-    recommendation:"সার্ভারের উপযোগী security header যাচাই করো।",
-    rawDownload:"cybersentinel-report.json"
+    uploadDescription:"Scanner থেকে ডাউনলোড করা JSON ফাইল নির্বাচন করো।",
+    load:"রিপোর্ট বিশ্লেষণ", exportBtn:"JSON ডাউনলোড", clearBtn:"পরিষ্কার করো",
+    coverageLabel:"Header উপস্থিতির হার", coverageCaption:"পরীক্ষিত header-এর মধ্যে উপস্থিত",
+    levelLabel:"Header-ভিত্তিক মাত্রা", levelCaption:"শুধু header প্রমাণের ভিত্তিতে",
+    checkedLabel:"পরীক্ষিত header",
+    detailsTitle:"পরীক্ষার তথ্য", findingsTitle:"Header বিশ্লেষণ",
+    limitsTitle:"সীমাবদ্ধতা", rawTitle:"সম্পূর্ণ JSON রিপোর্ট", copyBtn:"JSON কপি করো",
+    resultTitle:"রিপোর্টের ফলাফল", empty:"এখনো কোনো JSON রিপোর্ট নির্বাচন করা হয়নি।",
+    choose:"প্রথমে একটি JSON ফাইল নির্বাচন করো।",
+    success:"রিপোর্ট বিশ্লেষণ সম্পন্ন হয়েছে।",
+    invalid:"ফাইলটি বৈধ JSON নয় অথবা পড়া যায়নি।",
+    tooLarge:"ফাইলটি খুব বড়। ২ MB-এর কম JSON ফাইল ব্যবহার করো।",
+    copied:"JSON কপি হয়েছে।", copyError:"কপি করা যায়নি। JSON থেকে নিজে কপি করো।",
+    unknown:"যথেষ্ট তথ্য নেই", none:"অনুপস্থিত header নেই", low:"কম মনোযোগ প্রয়োজন", medium:"মাঝারি মনোযোগ প্রয়োজন",
+    present:"উপস্থিত", missing:"অনুপস্থিত", presentOf:"টি উপস্থিত",
+    target:"টার্গেট", checkedAt:"পরীক্ষার সময়", httpStatus:"HTTP status", redirect:"Redirect অনুসরণ",
+    yes:"হ্যাঁ", no:"না", observed:"পাওয়া মান", advice:"পরামর্শ",
+    noRows:"এই রিপোর্টে যাচাইযোগ্য header তথ্য নেই (যেমন redirect হলে header পরীক্ষা হয় না)।",
+    unrecognized:"রিপোর্টের গঠন চেনা যায়নি; Scanner-এর রিপোর্ট ব্যবহার করো।",
+    levelNote:"মাত্রা শুধু HSTS ও CSP-এর অনুপস্থিতি এবং অন্যান্য header-এর ভিত্তিতে; এটি vulnerability প্রমাণ করে না।",
+    fromScanner:"Scanner থেকে সর্বশেষ রিপোর্ট লোড হয়েছে।"
   },
   en: {
-    title:"Security Reports",
-    description:"Analyze a JSON report and review its security summary.",
+    title:"Security Reports", subtitle:"Analyze Scanner JSON reports",
     uploadTitle:"Choose a JSON report",
-    uploadDescription:"Select a JSON file exported from Scanner.",
-    load:"Analyze report",export:"Download JSON",
-    clear:"Clear",choose:"Choose a JSON file first.",
+    uploadDescription:"Select a JSON file downloaded from Scanner.",
+    load:"Analyze report", exportBtn:"Download JSON", clearBtn:"Clear",
+    coverageLabel:"Header coverage", coverageCaption:"Tested headers that are present",
+    levelLabel:"Header-based level", levelCaption:"Based on header evidence only",
+    checkedLabel:"Headers tested",
+    detailsTitle:"Scan details", findingsTitle:"Header analysis",
+    limitsTitle:"Limitations", rawTitle:"Full JSON report", copyBtn:"Copy JSON",
+    resultTitle:"Report results", empty:"No JSON report selected yet.",
+    choose:"Choose a JSON file first.",
     success:"Report analysis completed.",
     invalid:"The file is not valid JSON or could not be read.",
-    scoreLabel:"Security Score",scoreCaption:"Out of 100",
-    riskLabel:"Risk Level",riskCaption:"Based on available evidence",
-    findingLabel:"Findings",findingCaption:"Detected items",
-    summaryTitle:"Risk Summary",findingsTitle:"Security Findings",
-    rawTitle:"Full JSON Report",copy:"Copy JSON",
-    copied:"JSON copied.",
-    copyError:"Copy failed. Copy the JSON manually.",
-    empty:"No JSON report selected yet.",
-    noFindings:"No separate findings were identified in the report.",
-    low:"Low Risk",medium:"Medium Risk",high:"High Risk",
-    unknown:"Insufficient data",
-    noHeader:"Security header missing or not verified",
-    headerPresent:"Security header present",
-    recommendations:"Recommendations",
-    notTest:"This is a preliminary header-based assessment, not a full security test.",
-    malformed:"The report structure does not provide enough evidence for a reliable score.",
-    fileTooLarge:"File is too large. Please use a JSON file under 2 MB.",
-    riskText:"Risk is assessed using the information available in this report.",
-    scoreUnknown:"Not enough verifiable data",
-    details:"Details",
-    header:"Header",
-    present:"Present",
-    missing:"Missing",
-    recommendation:"Review security headers appropriate for your server.",
-    rawDownload:"cybersentinel-report.json"
+    tooLarge:"File is too large. Use a JSON file under 2 MB.",
+    copied:"JSON copied.", copyError:"Copy failed. Copy the JSON manually.",
+    unknown:"Insufficient data", none:"No missing headers", low:"Low attention needed", medium:"Medium attention needed",
+    present:"Present", missing:"Missing", presentOf:"present",
+    target:"Target", checkedAt:"Checked at", httpStatus:"HTTP status", redirect:"Redirect followed",
+    yes:"Yes", no:"No", observed:"Observed value", advice:"Recommendation",
+    noRows:"This report has no verifiable header data (for example, redirects are not header-checked).",
+    unrecognized:"Report format not recognized; use a report produced by Scanner.",
+    levelNote:"The level uses only missing HSTS/CSP and other headers; it does not prove a vulnerability.",
+    fromScanner:"Latest report from Scanner loaded."
   }
 };
 
-let lang = "bn";
 let currentReport = null;
+const T = k => CS.t(k);
+const KEY_HEADERS = /^(strict-transport-security|content-security-policy)$/i;
 
-try {
-  const prefs = JSON.parse(
-    localStorage.getItem("cybersentinel.preferences") || "{}"
-  );
-
-  if (["bn","en"].includes(prefs.language)) lang = prefs.language;
-
-  if (themes[prefs.theme]) {
-    Object.entries(themes[prefs.theme]).forEach(([key,value]) => {
-      document.documentElement.style.setProperty("--" + key,value);
-    });
-  }
-
-  if (["vertical","horizontal"].includes(prefs.layout)) {
-    $("layout").className = "layout " + prefs.layout;
-  }
-} catch (_) {}
-
-function setText(id,value) {
-  $(id).textContent = value;
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
 }
 
-function renderLanguage() {
-  const t = words[lang];
-  document.documentElement.lang = lang;
-
-  const labels = {
-    title:"title",
-    description:"description",
-    uploadTitle:"uploadTitle",
-    uploadDescription:"uploadDescription",
-    scoreLabel:"scoreLabel",
-    scoreCaption:"scoreCaption",
-    riskLabel:"riskLabel",
-    riskCaption:"riskCaption",
-    findingLabel:"findingLabel",
-    findingCaption:"findingCaption",
-    summaryTitle:"summaryTitle",
-    findingsTitle:"findingsTitle",
-    rawTitle:"rawTitle",
-    copy:"copy",
-    resultTitle:"rawTitle"
-  };
-
-  Object.entries(labels).forEach(([id,key]) => setText(id,t[key]));
-
-  setText("load",t.load);
-  setText("export",t.export);
-  setText("clear",t.clear);
-
-  if (!currentReport) setText("emptyText",t.empty);
-  else renderReport(currentReport);
-}
-
-function getHeaders(data) {
-  const candidates = [
-    data?.headers,
-    data?.response?.headers,
-    data?.result?.headers,
-    data?.data?.headers,
-    data?.scan?.headers
-  ];
-
-  for (const candidate of candidates) {
-    if (candidate && typeof candidate === "object" &&
-        !Array.isArray(candidate)) {
-      return candidate;
-    }
+function analyze(data) {
+  const list = Array.isArray(data.findings) ? data.findings : [];
+  const rows = list
+    .filter(x => x && typeof x === "object" && typeof x.header === "string")
+    .map(x => ({
+      header: x.header,
+      present: x.present === true,
+      value: x.observed_value == null ? "" : String(x.observed_value),
+      rec: typeof x.recommendation === "string" ? x.recommendation : ""
+    }));
+  const present = rows.filter(r => r.present).length;
+  const missing = rows.filter(r => !r.present);
+  let level = "unknown";
+  if (rows.length) {
+    level = missing.some(r => KEY_HEADERS.test(r.header)) ? "medium"
+          : missing.length ? "low" : "none";
   }
-  return null;
-}
-
-const securityHeaders = [
-  {
-    name:"Strict-Transport-Security",
-    points:20,
-    description:"HTTPS সংযোগে HSTS প্রয়োগ"
-  },
-  {
-    name:"Content-Security-Policy",
-    points:20,
-    description:"Content Security Policy"
-  },
-  {
-    name:"X-Content-Type-Options",
-    points:15,
-    description:"MIME sniffing প্রতিরোধ"
-  },
-  {
-    name:"X-Frame-Options",
-    points:15,
-    description:"Clickjacking প্রতিরোধ"
-  },
-  {
-    name:"Referrer-Policy",
-    points:15,
-    description:"Referrer তথ্য নিয়ন্ত্রণ"
-  },
-  {
-    name:"Permissions-Policy",
-    points:15,
-    description:"Browser feature policy"
-  }
-];
-
-function findValue(object, name) {
-  if (!object || typeof object !== "object") return undefined;
-  const key = Object.keys(object).find(
-    k => k.toLowerCase() === name.toLowerCase()
-  );
-  return key === undefined ? undefined : object[key];
-}
-
-function isPresent(value) {
-  if (value === undefined || value === null || value === false) {
-    return false;
-  }
-  if (typeof value === "string") {
-    return value.trim() !== "";
-  }
-  if (typeof value === "object" && "present" in value) {
-    return Boolean(value.present);
-  }
-  return true;
-}
-
-function normalizeSeverity(value) {
-  const s = String(value || "").toLowerCase();
-
-  if (/critical|severe|high|উচ্চ/.test(s)) return "high";
-  if (/medium|moderate|মাঝারি/.test(s)) return "medium";
-  if (/low|কম/.test(s)) return "low";
-  return "info";
-}
-
-function extractFindings(data) {
-  const possible = [
-    data?.findings,
-    data?.issues,
-    data?.vulnerabilities,
-    data?.results?.findings,
-    data?.scan?.findings
-  ];
-
-  const list = possible.find(Array.isArray);
-  if (!list) return [];
-
-  return list.map((item,index) => {
-    if (typeof item === "string") {
-      return {
-        title:item,
-        detail:"",
-        severity:"info"
-      };
-    }
-
-    return {
-      title:String(
-        item?.title || item?.name || item?.type ||
-        item?.message || ("Finding " + (index + 1))
-      ),
-      detail:String(
-        item?.description || item?.detail ||
-        item?.evidence || item?.recommendation || ""
-      ),
-      severity:normalizeSeverity(
-        item?.severity || item?.risk || item?.level
-      )
-    };
-  });
-}
-
-function buildSecuritySummary(data) {
-  const headers = getHeaders(data);
-  const findings = extractFindings(data);
-  const headerFindings = [];
-
-  let score = null;
-  let knownHeaders = 0;
-  let presentHeaders = 0;
-
-  if (headers) {
-    for (const item of securityHeaders) {
-      const value = findValue(headers,item.name);
-
-      if (value === undefined) continue;
-
-      knownHeaders++;
-      const present = isPresent(value);
-      if (present) presentHeaders++;
-
-      headerFindings.push({
-        title:item.name,
-        detail:item.description,
-        severity:present ? "low" : "medium",
-        present
-      });
-    }
-
-    if (knownHeaders > 0) {
-      const possiblePoints = securityHeaders
-        .filter(item => findValue(headers,item.name) !== undefined)
-        .reduce((sum,item) => sum + item.points,0);
-
-      const earnedPoints = securityHeaders.reduce((sum,item) => {
-        const value = findValue(headers,item.name);
-        if (value === undefined || !isPresent(value)) return sum;
-        return sum + item.points;
-      },0);
-
-      score = possiblePoints > 0
-        ? Math.round(earnedPoints / possiblePoints * 100)
-        : null;
-    }
-  }
-
-  // Only derive a header score when at least one recognized header
-  // is actually represented in the report.
-  const severityPoints = findings.reduce((sum,item) => {
-    if (item.severity === "high") return sum + 20;
-    if (item.severity === "medium") return sum + 10;
-    if (item.severity === "low") return sum + 3;
-    return sum;
-  },0);
-
-  let risk = "unknown";
-
-  if (score !== null) {
-    const highFindings = findings.filter(
-      item => item.severity === "high"
-    ).length;
-
-    if (highFindings > 0 || score < 50) risk = "high";
-    else if (score < 80 || findings.some(
-      item => item.severity === "medium"
-    )) risk = "medium";
-    else risk = "low";
-  } else if (findings.length > 0) {
-    if (findings.some(item => item.severity === "high")) risk = "high";
-    else if (findings.some(item => item.severity === "medium")) risk = "medium";
-    else risk = "unknown";
-  }
-
-  // Do not pretend that an unrecognized JSON structure has a verified score.
-  if (score === null && findings.length === 0) {
-    risk = "unknown";
-  }
-
   return {
-    score,
-    risk,
-    findings,
-    headerFindings,
-    headersKnown:knownHeaders,
-    headersPresent:presentHeaders,
-    severityPoints
+    rows, present, level,
+    coverage: rows.length ? Math.round(present / rows.length * 100) : null
   };
 }
 
-function renderReport(data) {
-  const t = words[lang];
-  const summary = buildSecuritySummary(data);
+function metaRow(label, value) {
+  const d = el("div");
+  d.append(el("span", "", label + ": "), el("span", "", value));
+  return d;
+}
+
+function renderReport() {
+  if (!currentReport) return;
+  const data = currentReport;
+  const a = analyze(data);
 
   $("dashboard").classList.remove("hidden");
   $("emptyPanel").classList.add("hidden");
 
-  setText("score",summary.score === null ? "—" : summary.score + "/100");
-  setText("risk",t[summary.risk] || t.unknown);
-  setText("findingCount",
-    String(summary.findings.length + summary.headerFindings.length));
+  $("coverage").textContent = a.coverage === null ? "—" : a.coverage + "%";
+  $("level").textContent = T(a.level);
+  $("checked").textContent = String(a.rows.length);
+  $("checkedCaption").textContent = a.rows.length ? a.present + " " + T("presentOf") : "";
 
-  $("score").style.color =
-    summary.score === null ? "var(--muted)" :
-    summary.score < 50 ? "#ff6868" :
-    summary.score < 80 ? "#f2bc55" : "var(--accent)";
-
-  $("risk").style.color =
-    summary.risk === "high" ? "#ff6868" :
-    summary.risk === "medium" ? "#f2bc55" :
-    summary.risk === "low" ? "var(--accent)" : "var(--muted)";
-
-  let summaryText = t.riskText + " ";
-
-  if (summary.score === null) {
-    summaryText += t.malformed;
-  } else {
-    summaryText +=
-      (lang === "bn" ? "স্কোর " : "Score ") +
-      summary.score + "/100. ";
-
-    if (summary.headersKnown > 0) {
-      summaryText +=
-        (lang === "bn" ? "পরীক্ষিত " : "Checked ") +
-        summary.headersKnown +
-        (lang === "bn" ? "টি header-এর মধ্যে " : " headers; ") +
-        summary.headersPresent +
-        (lang === "bn" ? "টি উপস্থিত। " : " present. ");
-    }
+  const meta = $("meta");
+  meta.replaceChildren();
+  if (typeof data.target === "string") meta.append(metaRow(T("target"), data.target));
+  if (typeof data.checked_at === "string") {
+    const d = new Date(data.checked_at);
+    meta.append(metaRow(T("checkedAt"), isNaN(d) ? data.checked_at : d.toLocaleString()));
   }
+  if (data.status !== undefined) meta.append(metaRow(T("httpStatus"), String(data.status)));
+  if (typeof data.redirect_followed === "boolean") {
+    meta.append(metaRow(T("redirect"), data.redirect_followed ? T("yes") : T("no")));
+  }
+  if (typeof data.note === "string") meta.append(metaRow("Note", data.note));
 
-  summaryText += t.notTest;
-  setText("summaryText",summaryText);
-
-  const container = $("findings");
-  container.replaceChildren();
-
-  const items = [
-    ...summary.headerFindings.map(item => ({
-      ...item,
-      title:item.title,
-      detail:item.detail + " — " +
-        (item.present ? t.present : t.missing)
-    })),
-    ...summary.findings
-  ];
-
-  if (items.length === 0) {
-    const p = document.createElement("p");
-    p.className = "empty";
-    p.textContent = t.noFindings;
-    container.appendChild(p);
+  const box = $("findings");
+  box.replaceChildren();
+  if (!a.rows.length) {
+    box.append(el("p", "muted", Array.isArray(data.findings) ? T("noRows") : T("unrecognized")));
   } else {
-    items.forEach(item => {
-      const article = document.createElement("article");
-      article.className = "finding " + item.severity;
-
-      const heading = document.createElement("strong");
-      heading.textContent = item.title;
-      article.appendChild(heading);
-
-      if (item.detail) {
-        const detail = document.createElement("div");
-        detail.textContent = item.detail;
-        article.appendChild(detail);
-      }
-
-      const badge = document.createElement("small");
-      badge.textContent = item.severity.toUpperCase();
-      article.appendChild(badge);
-
-      container.appendChild(article);
+    a.rows.forEach(r => {
+      const cls = r.present ? "ok" : (KEY_HEADERS.test(r.header) ? "medium" : "low");
+      const card = el("article", "finding " + cls);
+      card.append(el("strong", "", r.header + " — " + (r.present ? T("present") : T("missing"))));
+      if (r.value) card.append(el("div", "small muted", T("observed") + ": " + r.value));
+      if (r.rec) card.append(el("div", "", T("advice") + ": " + r.rec));
+      box.append(card);
     });
+    box.append(el("p", "small muted", T("levelNote")));
   }
 
-  $("result").textContent = JSON.stringify(data,null,2);
+  const limits = $("limits");
+  limits.replaceChildren();
+  const lim = Array.isArray(data.limitations) ? data.limitations.filter(x => typeof x === "string") : [];
+  if (lim.length) lim.forEach(x => limits.append(el("p", "", "• " + x)));
+  else limits.append(el("p", "muted", "—"));
+
+  $("result").textContent = JSON.stringify(data, null, 2);
   $("export").disabled = false;
 }
 
-$("load").addEventListener("click",async()=>{
-  const file = $("file").files[0];
-  const t = words[lang];
-
-  if (!file) {
-    setText("status",t.choose);
-    return;
-  }
-
-  if (file.size > 2 * 1024 * 1024) {
-    setText("status",t.fileTooLarge);
-    return;
-  }
-
-  try {
-    const content = await file.text();
-    const data = JSON.parse(content);
-
-    if (!data || typeof data !== "object") {
-      throw new Error("Invalid report structure");
-    }
-
-    currentReport = data;
-    renderReport(data);
-    setText("status",t.success);
-  } catch (_) {
-    currentReport = null;
-    $("dashboard").classList.add("hidden");
-    $("emptyPanel").classList.remove("hidden");
-    setText("emptyText",t.empty);
-    setText("status",t.invalid);
-    $("export").disabled = true;
-  }
-});
-
-$("export").addEventListener("click",()=>{
-  if (!currentReport) return;
-
-  const blob = new Blob(
-    [JSON.stringify(currentReport,null,2)],
-    {type:"application/json"}
-  );
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = words[lang].rawDownload;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-});
-
-$("copy").addEventListener("click",async()=>{
-  if (!currentReport) return;
-
-  try {
-    await navigator.clipboard.writeText(
-      JSON.stringify(currentReport,null,2)
-    );
-    setText("status",words[lang].copied);
-  } catch (_) {
-    setText("status",words[lang].copyError);
-  }
-});
-
-$("clear").addEventListener("click",()=>{
+function resetView() {
   currentReport = null;
-  $("file").value = "";
   $("dashboard").classList.add("hidden");
   $("emptyPanel").classList.remove("hidden");
-  setText("emptyText",words[lang].empty);
-  setText("status","");
   $("export").disabled = true;
+}
+
+CS.init({ dict: DICT, onChange: () => { if (currentReport) renderReport(); } });
+
+$("load").addEventListener("click", async () => {
+  const file = $("file").files[0];
+  if (!file) { $("status").textContent = T("choose"); return; }
+  if (file.size > 2 * 1024 * 1024) { $("status").textContent = T("tooLarge"); return; }
+  try {
+    const data = JSON.parse(await file.text());
+    if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("bad");
+    currentReport = data;
+    renderReport();
+    $("status").textContent = T("success");
+  } catch (_) {
+    resetView();
+    $("status").textContent = T("invalid");
+  }
 });
 
-renderLanguage();
+$("export").addEventListener("click", () => {
+  if (!currentReport) return;
+  const blob = new Blob([JSON.stringify(currentReport, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "cybersentinel-report.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+
+$("copy").addEventListener("click", async () => {
+  if (!currentReport) return;
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(currentReport, null, 2));
+    $("status").textContent = T("copied");
+  } catch (_) {
+    $("status").textContent = T("copyError");
+  }
+});
+
+$("clear").addEventListener("click", () => {
+  $("file").value = "";
+  resetView();
+  $("status").textContent = "";
+});
+
+// Report handed over from Scanner or History (same tab, same browser session).
+try {
+  const raw = sessionStorage.getItem("cybersentinel.openReport");
+  if (raw) {
+    sessionStorage.removeItem("cybersentinel.openReport");
+    const data = JSON.parse(raw);
+    if (data && typeof data === "object" && !Array.isArray(data)) {
+      currentReport = data;
+      renderReport();
+      $("status").textContent = T("fromScanner");
+    }
+  }
+} catch (_) {}
 </script>
 </body>
 </html>
