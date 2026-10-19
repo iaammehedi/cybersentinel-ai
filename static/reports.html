@@ -1,860 +1,112 @@
+
 <!doctype html>
 <html lang="bn">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#000000">
-<title>Scanner | CyberSentinel AI</title>
-
+<title>Reports | CyberSentinel AI</title>
 <style>
-:root {
-  color-scheme: dark;
-  --bg:#000;
-  --panel:#101010;
-  --line:#292929;
-  --accent:#40E0C0;
-  --text:#F5F7FA;
-  --muted:#9CA3AF;
-}
-
-* { box-sizing:border-box; }
-
-body {
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font:15px/1.6 system-ui,sans-serif;
-}
-
-button,input { font:inherit; }
-button,a { -webkit-tap-highlight-color:transparent; }
-button { cursor:pointer; }
-a { color:inherit; text-decoration:none; }
-
-.layout { min-height:100vh; }
-
-/* Sidebar */
-.sidebar {
-  background:var(--panel);
-  border-color:var(--line);
-  padding:18px 14px;
-  display:flex;
-  flex-direction:column;
-  gap:20px;
-  z-index:30;
-}
-
-.brand {
-  display:flex;
-  align-items:center;
-  gap:10px;
-  font-size:18px;
-  font-weight:800;
-  padding:5px 8px;
-  white-space:nowrap;
-}
-
-.brand span { color:var(--text); }
-
-.brand-icon {
-  width:25px;
-  height:25px;
-  flex-shrink:0;
-}
-
-.nav {
-  display:grid;
-  gap:6px;
-}
-
-.nav a {
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:12px;
-  border:1px solid transparent;
-  border-radius:10px;
-  color:var(--muted);
-  transition:background .15s ease,color .15s ease;
-}
-
-.nav a:hover,
-.nav a.active {
-  color:var(--text);
-  background:var(--bg);
-  border-color:var(--line);
-}
-
-.nav a.active {
-  box-shadow:inset 3px 0 var(--text);
-}
-
-.nav-icon {
-  width:21px;
-  height:21px;
-  flex-shrink:0;
-  stroke:currentColor;
-}
-
-/* Main content */
-main {
-  width:min(780px,100%);
-  margin:auto;
-  padding:22px 16px;
-}
-
-.topbar {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  margin-bottom:20px;
-}
-
-.top-left {
-  display:flex;
-  align-items:center;
-  gap:12px;
-  min-width:0;
-}
-
-.top-heading {
-  min-width:0;
-}
-
-h1 {
-  font-size:26px;
-  line-height:1.3;
-  margin:0;
-}
-
-h2 {
-  font-size:18px;
-  margin:0 0 8px;
-}
-
-p,.muted { color:var(--muted); }
-
-.panel {
-  background:var(--panel);
-  border:1px solid var(--line);
-  border-radius:17px;
-  padding:19px;
-  margin-bottom:16px;
-}
-
-.small { font-size:12px; }
-
-.menu-button {
-  display:none;
-  width:45px;
-  height:45px;
-  flex-shrink:0;
-  align-items:center;
-  justify-content:center;
-  padding:0;
-  background:var(--panel);
-  color:var(--text);
-  border:1px solid var(--line);
-  border-radius:12px;
-}
-
-.menu-button svg {
-  width:23px;
-  height:23px;
-  stroke:currentColor;
-}
-
-.language-button {
-  flex-shrink:0;
-  padding:9px 13px;
-  background:var(--panel);
-  color:var(--text);
-  border:1px solid var(--line);
-  border-radius:10px;
-  font-weight:650;
-}
-
-input[type="text"],
-input[type="url"],
-input[type="password"] {
-  width:100%;
-  padding:12px;
-  border:1px solid var(--line);
-  border-radius:10px;
-  background:var(--bg);
-  color:var(--text);
-  outline:none;
-}
-
-input:focus {
-  border-color:var(--text);
-}
-
-label {
-  display:block;
-  margin:13px 0 6px;
-}
-
-.check {
-  display:flex;
-  align-items:flex-start;
-  gap:10px;
-}
-
-.check input {
-  width:17px;
-  height:17px;
-  flex-shrink:0;
-  margin-top:5px;
-  accent-color:var(--text);
-}
-
-button.primary {
-  border:1px solid var(--text);
-  border-radius:10px;
-  padding:11px 15px;
-  background:var(--text);
-  color:var(--bg);
-  font-weight:750;
-}
-
-button:disabled {
-  opacity:.5;
-  cursor:not-allowed;
-}
-
-.actions {
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-top:15px;
-}
-
-#status {
-  color:var(--text);
-  overflow-wrap:anywhere;
-}
-
-pre {
-  white-space:pre-wrap;
-  overflow-wrap:anywhere;
-  font-size:13px;
-  color:var(--text);
-}
-
-.overlay {
-  display:none;
-}
-
-/* Desktop layouts */
-@media (min-width:760px) {
-  .layout.vertical {
-    display:grid;
-    grid-template-columns:235px minmax(0,1fr);
-  }
-
-  .layout.vertical .sidebar {
-    border-right:1px solid var(--line);
-    min-height:100vh;
-  }
-
-  .layout.vertical main {
-    width:100%;
-    max-width:820px;
-  }
-
-  .layout.horizontal .sidebar {
-    flex-direction:row;
-    align-items:center;
-    justify-content:space-between;
-    border-bottom:1px solid var(--line);
-  }
-
-  .layout.horizontal .nav {
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:flex-end;
-  }
-
-  .layout.horizontal .nav a {
-    padding:10px;
-  }
-}
-
-/* Mobile: hidden off-canvas menu */
-@media (max-width:759px) {
-  .sidebar {
-    position:fixed;
-    inset:0 auto 0 0;
-    width:min(290px,85vw);
-    height:100dvh;
-    overflow-y:auto;
-    padding:22px 15px;
-    border-right:1px solid var(--line);
-    transform:translateX(-105%);
-    visibility:hidden;
-    transition:
-      transform .22s ease,
-      visibility .22s ease;
-    box-shadow:none;
-  }
-
-  body.menu-open .sidebar {
-    transform:translateX(0);
-    visibility:visible;
-    box-shadow:15px 0 45px #0008;
-  }
-
-  .nav {
-    display:grid;
-    gap:7px;
-  }
-
-  .nav a {
-    padding:13px;
-  }
-
-  .menu-button {
-    display:inline-flex;
-  }
-
-  .overlay {
-    position:fixed;
-    inset:0;
-    z-index:25;
-    background:rgba(0,0,0,.68);
-  }
-
-  body.menu-open .overlay {
-    display:block;
-  }
-
-  body.menu-open {
-    overflow:hidden;
-  }
-
-  main {
-    width:100%;
-    padding:18px 14px 28px;
-  }
-
-  h1 { font-size:23px; }
-
-  .panel {
-    padding:17px;
-    border-radius:16px;
-  }
-}
-
-@media (prefers-reduced-motion:reduce) {
-  *,*::before,*::after {
-    transition:none !important;
-    scroll-behavior:auto !important;
-  }
-}
+:root{color-scheme:dark;--bg:#000;--panel:#101010;--line:#292929;--accent:#40E0C0;--text:#F5F7FA;--muted:#9CA3AF}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 system-ui,sans-serif}
+.layout{min-height:100vh}
+.sidebar{background:var(--panel);border-color:var(--line);padding:16px;display:flex;flex-direction:column;gap:14px}
+.brand{font-size:18px;font-weight:750}.brand span{color:var(--accent)}
+.nav{display:flex;flex-wrap:wrap;gap:8px}
+.nav a{color:var(--muted);text-decoration:none;padding:9px 11px;border-radius:9px}
+.nav a.active,.nav a:hover{color:var(--accent);background:#18201f}
+main{width:min(850px,100%);margin:auto;padding:24px 16px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:17px;margin-bottom:16px}
+h1{font-size:26px;margin:0}h2{font-size:17px;margin:0 0 8px}
+p,.muted{color:var(--muted)}
+button{border:0;border-radius:9px;padding:11px 15px;background:var(--accent);color:#001612;font:inherit;font-weight:700;cursor:pointer}
+button:disabled{opacity:.5}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+#status{color:var(--accent)}
+@media(min-width:760px){.layout.vertical{display:grid;grid-template-columns:235px minmax(0,1fr)}.layout.vertical .sidebar{border-right:1px solid var(--line);min-height:100vh}.layout.vertical .nav{flex-direction:column}.layout.horizontal .sidebar{flex-direction:row;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.layout.horizontal .nav{justify-content:flex-end}}
+@media(max-width:759px){.sidebar{border-bottom:1px solid var(--line)}.layout.vertical .nav{flex-direction:column}.layout.horizontal .nav{flex-direction:row}}
 </style>
 </head>
-
 <body>
-
 <div class="layout vertical" id="layout">
-
-  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
-
-    <div class="brand">
-      <svg class="brand-icon" viewBox="0 0 24 24"
-           fill="none" stroke="currentColor"
-           stroke-width="1.8" aria-hidden="true">
-        <path d="M12 2.5 20 5.5v6.1c0 5-3.4 8.3-8 10.2-4.6-1.9-8-5.2-8-10.2V5.5L12 2.5Z"/>
-        <path d="m8.5 12 2.2 2.2 4.8-5"/>
-      </svg>
-      <div>CyberSentinel <span>AI</span></div>
-    </div>
-
-    <nav class="nav" aria-label="Main navigation">
-
-      <a href="/" id="navChat">
-        <svg class="nav-icon" viewBox="0 0 24 24"
-             fill="none" stroke-width="1.8"
-             stroke-linecap="round" stroke-linejoin="round"
-             aria-hidden="true">
-          <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z"/>
-        </svg>
-        <span id="chatText">চ্যাট</span>
-      </a>
-
-      <a href="/static/scanner.html" class="active"
-         id="navScanner" aria-current="page">
-        <svg class="nav-icon" viewBox="0 0 24 24"
-             fill="none" stroke-width="1.8"
-             stroke-linecap="round" stroke-linejoin="round"
-             aria-hidden="true">
-          <path d="M8 3H5a2 2 0 0 0-2 2v3"/>
-          <path d="M16 3h3a2 2 0 0 1 2 2v3"/>
-          <path d="M21 16v3a2 2 0 0 1-2 2h-3"/>
-          <path d="M3 16v3a2 2 0 0 0 2 2h3"/>
-          <circle cx="10.5" cy="10.5" r="4.5"/>
-          <path d="m14 14 4 4"/>
-        </svg>
-        <span id="scannerText">Scanner</span>
-      </a>
-
-      <a href="/static/reports.html" id="navReports">
-        <svg class="nav-icon" viewBox="0 0 24 24"
-             fill="none" stroke-width="1.8"
-             stroke-linecap="round" stroke-linejoin="round"
-             aria-hidden="true">
-          <path d="M3 3v18h18"/>
-          <path d="m7 14 4-4 4 3 6-7"/>
-        </svg>
-        <span id="reportsText">Reports</span>
-      </a>
-
-      <a href="/static/history.html" id="navHistory">
-        <svg class="nav-icon" viewBox="0 0 24 24"
-             fill="none" stroke-width="1.8"
-             stroke-linecap="round" stroke-linejoin="round"
-             aria-hidden="true">
-          <path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/>
-          <path d="M3 3v5h5"/>
-          <path d="M12 7v5l3 2"/>
-        </svg>
-        <span id="historyText">History</span>
-      </a>
-
-      <a href="/static/settings.html" id="navSettings">
-        <svg class="nav-icon" viewBox="0 0 24 24"
-             fill="none" stroke-width="1.8"
-             stroke-linecap="round" stroke-linejoin="round"
-             aria-hidden="true">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.7a8 8 0 0 1-1.8 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.8-1l-1.7.7-1.4-2.4 1.4-1.1a7 7 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.7a8 8 0 0 1 1.8-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.8 1l1.7-.7 1.4 2.4-1.4 1.1a7 7 0 0 1 0 2Z"
-                transform="translate(-1 -1)"/>
-        </svg>
-        <span id="settingsText">Settings</span>
-      </a>
-
-    </nav>
-
-    <p class="small muted" id="sideNote">
-      শুধু অনুমোদিত ওয়েবসাইট পরীক্ষা করো।
-    </p>
-  </aside>
-
-  <div class="overlay" id="overlay" aria-hidden="true"></div>
-
-  <main>
-    <header class="topbar">
-      <div class="top-left">
-        <button class="menu-button" id="menuButton"
-                type="button" aria-label="Open menu"
-                aria-controls="sidebar" aria-expanded="false">
-          <svg viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" aria-hidden="true">
-            <path d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
-        </button>
-
-        <div class="top-heading">
-          <h1 id="title">ওয়েবসাইট Scanner</h1>
-          <div class="muted small" id="subtitle">
-            নিরাপদ ওয়েবসাইট পরীক্ষা
-          </div>
-        </div>
-      </div>
-
-      <button class="language-button" id="languageButton"
-              type="button">English</button>
-    </header>
-
-    <section class="panel">
-      <h2 id="introTitle">ওয়েবসাইট Scanner</h2>
-      <p id="intro">
-        শুধু নিজের বা লিখিত অনুমতিপ্রাপ্ত ওয়েবসাইট পরীক্ষা করো।
-      </p>
-    </section>
-
-    <section class="panel">
-      <h2 id="formTitle">অনুমোদিত HTTPS পরীক্ষা</h2>
-      <p id="formHelp">
-        এই টুল সীমিত HTTPS status ও security headers পরীক্ষা করার জন্য।
-      </p>
-
-      <form id="scanForm">
-        <label for="token" id="tokenLabel">Private scan token</label>
-        <input id="token" type="password"
-               autocomplete="off" required>
-
-        <label for="target" id="targetLabel">
-          ওয়েবসাইটের HTTPS URL
-        </label>
-        <input id="target" type="url"
-               placeholder="https://your-domain.example"
-               required>
-
-        <label class="check">
-          <input id="consent" type="checkbox" required>
-          <span id="consentText">
-            আমি এই ওয়েবসাইট পরীক্ষা করার অনুমতি পেয়েছি।
-          </span>
-        </label>
-
-        <div class="actions">
-          <button class="primary" id="scan" type="submit">
-            নিরাপত্তা পরীক্ষা চালাও
-          </button>
-        </div>
-      </form>
-
-      <p id="status" role="status" aria-live="polite"></p>
-    </section>
-
-    <section class="panel">
-      <h2 id="reportTitle">পরীক্ষার ফলাফল</h2>
-      <pre id="report">এখনো কোনো পরীক্ষা চালানো হয়নি।</pre>
-      <button class="primary" id="download"
-              type="button" disabled>
-        JSON রিপোর্ট ডাউনলোড
-      </button>
-    </section>
-
-    <p class="small muted" id="notice">
-      এটি সীমিত passive checker; পূর্ণাঙ্গ vulnerability scanner নয়।
-    </p>
-  </main>
+<aside class="sidebar">
+<div class="brand">🛡️ CyberSentinel<span> AI</span></div>
+<nav class="nav">
+<a href="/">◈ Chat</a>
+<a href="/static/scanner.html">⌕ Scanner</a>
+<a href="/static/reports.html" class="active">▤ Reports</a>
+<a href="/static/history.html" id="historyLink">◷ History</a>
+<a href="/static/settings.html">⚙ Settings</a>
+</nav>
+</aside>
+<main>
+<section class="panel">
+<h1 id="title">নিরাপত্তা রিপোর্ট</h1>
+<p id="description">Scanner থেকে ডাউনলোড করা JSON রিপোর্ট এখানে খুলে দেখতে পারবে।</p>
+</section>
+<section class="panel">
+<h2 id="uploadTitle">রিপোর্ট নির্বাচন করো</h2>
+<input id="file" type="file" accept=".json,application/json">
+<div class="actions" style="margin-top:14px">
+<button id="load" type="button">রিপোর্ট দেখাও</button>
+<button id="clear" type="button">পরিষ্কার করো</button>
 </div>
-
+<p id="status" role="status" aria-live="polite"></p>
+</section>
+<section class="panel">
+<h2 id="resultTitle">রিপোর্টের ফলাফল</h2>
+<pre id="result">এখনো কোনো JSON রিপোর্ট নির্বাচন করা হয়নি।</pre>
+</section>
+</main>
+</div>
 <script>
-const $ = id => document.getElementById(id);
-
-const defaults = {
-  theme:"deep",
-  layout:"vertical",
-  language:"bn"
+const $=id=>document.getElementById(id);
+const themes={
+deep:{bg:"#000000",panel:"#101010",line:"#292929",accent:"#40E0C0",text:"#F5F7FA",muted:"#9CA3AF"},
+midnight:{bg:"#0B1120",panel:"#141E30",line:"#2C3B50",accent:"#38D9C0",text:"#EEF5FF",muted:"#9CACC3"},
+matrix:{bg:"#020602",panel:"#091109",line:"#203520",accent:"#39FF14",text:"#E9FFE7",muted:"#9BB49A"},
+purple:{bg:"#0B0812",panel:"#15101F",line:"#352745",accent:"#A78BFA",text:"#F5F0FF",muted:"#B8AACB"},
+light:{bg:"#F4F6FA",panel:"#FFFFFF",line:"#D9E0EA",accent:"#147D71",text:"#152033",muted:"#5C6B7E"}
 };
-
-const themes = {
-  deep:{
-    bg:"#000000",panel:"#101010",line:"#292929",
-    accent:"#40E0C0",text:"#F5F7FA",muted:"#9CA3AF"
-  },
-  midnight:{
-    bg:"#0B1120",panel:"#141E30",line:"#2C3B50",
-    accent:"#38D9C0",text:"#EEF5FF",muted:"#9CACC3"
-  },
-  matrix:{
-    bg:"#020602",panel:"#091109",line:"#203520",
-    accent:"#39FF14",text:"#E9FFE7",muted:"#9BB49A"
-  },
-  purple:{
-    bg:"#0B0812",panel:"#15101F",line:"#352745",
-    accent:"#A78BFA",text:"#F5F0FF",muted:"#B8AACB"
-  },
-  light:{
-    bg:"#F4F6FA",panel:"#FFFFFF",line:"#D9E0EA",
-    accent:"#147D71",text:"#152033",muted:"#5C6B7E"
-  }
+const text={
+bn:{title:"নিরাপত্তা রিপোর্ট",description:"Scanner থেকে ডাউনলোড করা JSON রিপোর্ট এখানে খুলে দেখতে পারবে।",uploadTitle:"রিপোর্ট নির্বাচন করো",load:"রিপোর্ট দেখাও",clear:"পরিষ্কার করো",resultTitle:"রিপোর্টের ফলাফল",empty:"এখনো কোনো JSON রিপোর্ট নির্বাচন করা হয়নি।",choose:"প্রথমে একটি JSON ফাইল নির্বাচন করো।",success:"রিপোর্ট সফলভাবে খোলা হয়েছে।",invalid:"ফাইলটি বৈধ JSON রিপোর্ট নয়।"},
+en:{title:"Security reports",description:"Open and inspect a JSON report exported from Scanner.",uploadTitle:"Choose a report",load:"View report",clear:"Clear",resultTitle:"Report results",empty:"No JSON report selected yet.",choose:"Choose a JSON file first.",success:"Report loaded successfully.",invalid:"This file is not valid JSON."}
 };
-
-const words = {
-  bn:{
-    title:"ওয়েবসাইট Scanner",
-    subtitle:"নিরাপদ ওয়েবসাইট পরীক্ষা",
-    introTitle:"ওয়েবসাইট Scanner",
-    intro:"শুধু নিজের বা লিখিত অনুমতিপ্রাপ্ত ওয়েবসাইট পরীক্ষা করো।",
-    formTitle:"অনুমোদিত HTTPS পরীক্ষা",
-    formHelp:"এই টুল সীমিত HTTPS status ও security headers পরীক্ষা করার জন্য।",
-    tokenLabel:"Private scan token",
-    targetLabel:"ওয়েবসাইটের HTTPS URL",
-    consentText:"আমি এই ওয়েবসাইট পরীক্ষা করার অনুমতি পেয়েছি।",
-    scan:"নিরাপত্তা পরীক্ষা চালাও",
-    scanning:"পরীক্ষা চলছে...",
-    reportTitle:"পরীক্ষার ফলাফল",
-    empty:"এখনো কোনো পরীক্ষা চালানো হয়নি।",
-    notice:"এটি সীমিত passive checker; পূর্ণাঙ্গ vulnerability scanner নয়।",
-    success:"Backend থেকে ফলাফল পাওয়া গেছে।",
-    error:"পরীক্ষা ব্যর্থ",
-    download:"JSON রিপোর্ট ডাউনলোড",
-    chat:"চ্যাট",
-    scanner:"স্ক্যানার",
-    reports:"রিপোর্ট",
-    history:"ইতিহাস",
-    settings:"সেটিংস",
-    sideNote:"শুধু অনুমোদিত ওয়েবসাইট পরীক্ষা করো।",
-    language:"English"
-  },
-  en:{
-    title:"Website Scanner",
-    subtitle:"Website security checker",
-    introTitle:"Website Scanner",
-    intro:"Only test websites you own or are explicitly authorized to assess.",
-    formTitle:"Authorized HTTPS check",
-    formHelp:"This tool performs limited HTTPS status and security-header checks.",
-    tokenLabel:"Private scan token",
-    targetLabel:"Website HTTPS URL",
-    consentText:"I am authorized to test this website.",
-    scan:"Run security check",
-    scanning:"Checking...",
-    reportTitle:"Scan results",
-    empty:"No scan has been run yet.",
-    notice:"This is a limited passive checker, not a full vulnerability scanner.",
-    success:"Results received from backend.",
-    error:"Scan failed",
-    download:"Download JSON report",
-    chat:"Chat",
-    scanner:"Scanner",
-    reports:"Reports",
-    history:"History",
-    settings:"Settings",
-    sideNote:"Only test authorized websites.",
-    language:"বাংলা"
-  }
-};
-
-let prefs = {...defaults};
-let lastReport = null;
-let busy = false;
-
-function loadPrefs() {
-  try {
-    const p = JSON.parse(
-      localStorage.getItem("cybersentinel.preferences") || "{}"
-    );
-
-    if (themes[p.theme]) prefs.theme = p.theme;
-
-    if (["vertical","horizontal"].includes(p.layout)) {
-      prefs.layout = p.layout;
-    }
-
-    if (["bn","en"].includes(p.language)) {
-      prefs.language = p.language;
-    }
-  } catch (_) {}
+let lang="bn";
+try{
+const p=JSON.parse(localStorage.getItem("cybersentinel.preferences")||"{}");
+if(["bn","en"].includes(p.language))lang=p.language;
+if(themes[p.theme])Object.entries(themes[p.theme]).forEach(([k,v])=>document.documentElement.style.setProperty("--"+k,v));
+if(["vertical","horizontal"].includes(p.layout))$("layout").className="layout "+p.layout;
+}catch(_){}
+function renderLanguage(){
+document.documentElement.lang=lang;
+for(const id of ["title","description","uploadTitle","resultTitle"])$(id).textContent=text[lang][id];
+$("load").textContent=text[lang].load;
+$("clear").textContent=text[lang].clear;
+if(!$("file").files.length)$("result").textContent=text[lang].empty;
 }
-
-function savePrefs() {
-  try {
-    const old = JSON.parse(
-      localStorage.getItem("cybersentinel.preferences") || "{}"
-    );
-
-    localStorage.setItem(
-      "cybersentinel.preferences",
-      JSON.stringify({...old, ...prefs})
-    );
-  } catch (_) {}
+$("load").addEventListener("click",async()=>{
+const file=$("file").files[0];
+if(!file){$("status").textContent=text[lang].choose;return;}
+try{
+const content=await file.text();
+const data=JSON.parse(content);
+$("result").textContent=JSON.stringify(data,null,2);
+$("status").textContent=text[lang].success;
+}catch(_){
+$("result").textContent="";
+$("status").textContent=text[lang].invalid;
 }
-
-function renderPrefs() {
-  const theme = themes[prefs.theme] || themes.deep;
-
-  Object.entries(theme).forEach(([key,value]) => {
-    document.documentElement.style.setProperty("--" + key,value);
-  });
-
-  $("layout").className = "layout " + prefs.layout;
-  document.documentElement.lang = prefs.language;
-
-  const t = words[prefs.language];
-
-  $("title").textContent = t.title;
-  $("subtitle").textContent = t.subtitle;
-  $("introTitle").textContent = t.introTitle;
-  $("intro").textContent = t.intro;
-  $("formTitle").textContent = t.formTitle;
-  $("formHelp").textContent = t.formHelp;
-  $("tokenLabel").textContent = t.tokenLabel;
-  $("targetLabel").textContent = t.targetLabel;
-  $("consentText").textContent = t.consentText;
-  $("reportTitle").textContent = t.reportTitle;
-  $("notice").textContent = t.notice;
-  $("download").textContent = t.download;
-  $("sideNote").textContent = t.sideNote;
-
-  $("chatText").textContent = t.chat;
-  $("scannerText").textContent = t.scanner;
-  $("reportsText").textContent = t.reports;
-  $("historyText").textContent = t.history;
-  $("settingsText").textContent = t.settings;
-
-  $("languageButton").textContent = t.language;
-  $("scan").textContent = busy ? t.scanning : t.scan;
-}
-
-function closeMenu() {
-  document.body.classList.remove("menu-open");
-  $("menuButton").setAttribute("aria-expanded","false");
-  $("menuButton").setAttribute("aria-label","Open menu");
-}
-
-function toggleMenu() {
-  const open = !document.body.classList.contains("menu-open");
-
-  document.body.classList.toggle("menu-open",open);
-  $("menuButton").setAttribute("aria-expanded",String(open));
-  $("menuButton").setAttribute(
-    "aria-label",open ? "Close menu" : "Open menu"
-  );
-}
-
-$("menuButton").addEventListener("click",toggleMenu);
-$("overlay").addEventListener("click",closeMenu);
-
-document.querySelectorAll(".nav a").forEach(link => {
-  link.addEventListener("click",closeMenu);
 });
-
-document.addEventListener("keydown",event => {
-  if (event.key === "Escape") closeMenu();
+$("clear").addEventListener("click",()=>{
+$("file").value="";
+$("result").textContent=text[lang].empty;
+$("status").textContent="";
 });
-
-window.addEventListener("resize",() => {
-  if (window.innerWidth >= 760) closeMenu();
-});
-
-$("languageButton").addEventListener("click",() => {
-  prefs.language = prefs.language === "bn" ? "en" : "bn";
-  savePrefs();
-  renderPrefs();
-});
-
-function buildSecuritySummary(data) {
-  const findings = Array.isArray(data.findings)
-    ? data.findings
-    : [];
-
-  const present = findings.filter(item => item.present).length;
-  const missing = findings.filter(item => !item.present);
-
-  return {
-    title:"Security Header Summary",
-    score:findings.length
-      ? Math.round((present / findings.length) * 100)
-      : null,
-    score_note:"এটি শুধু পরীক্ষিত security header-এর উপস্থিতির স্কোর।",
-    headers_checked:findings.length,
-    headers_present:present,
-    headers_missing:missing.map(item => ({
-      header:item.header,
-      recommendation:item.recommendation
-    }))
-  };
-}
-
-$("scanForm").addEventListener("submit",async event => {
-  event.preventDefault();
-
-  if (busy) return;
-
-  const token = $("token").value;
-  const url = $("target").value.trim();
-  const consent = $("consent").checked;
-
-  if (!consent) return;
-
-  busy = true;
-  $("scan").disabled = true;
-  $("download").disabled = true;
-  $("status").textContent = words[prefs.language].scanning;
-  $("report").textContent = "";
-  renderPrefs();
-
-  try {
-    const response = await fetch("/api/scan",{
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json",
-        "X-Scan-Token":token
-      },
-      body:JSON.stringify({
-        url,
-        confirm_authorized:consent
-      })
-    });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      const detail = typeof data.detail === "string"
-        ? data.detail
-        : JSON.stringify(data.detail || data || {});
-
-      throw new Error(detail || "HTTP " + response.status);
-    }
-
-    const displayReport = {
-      ...data,
-      security_summary:buildSecuritySummary(data)
-    };
-
-    lastReport = displayReport;
-
-    $("report").textContent =
-      JSON.stringify(displayReport,null,2);
-
-    $("status").textContent = words[prefs.language].success;
-    $("download").disabled = false;
-
-    try {
-      const history = JSON.parse(
-        localStorage.getItem("cybersentinel.history") || "[]"
-      );
-
-      history.unshift({
-        title:url,
-        date:new Date().toLocaleString(),
-        report:displayReport
-      });
-
-      localStorage.setItem(
-        "cybersentinel.history",
-        JSON.stringify(history.slice(0,50))
-      );
-    } catch (error) {
-      console.error("History save failed:",error);
-    }
-
-  } catch (error) {
-    $("status").textContent =
-      words[prefs.language].error + ": " + error.message;
-
-    $("report").textContent = JSON.stringify({
-      error:error.message
-    },null,2);
-
-  } finally {
-    busy = false;
-    $("scan").disabled = false;
-    renderPrefs();
-  }
-});
-
-$("download").addEventListener("click",() => {
-  if (!lastReport) return;
-
-  const blob = new Blob(
-    [JSON.stringify(lastReport,null,2)],
-    {type:"application/json"}
-  );
-
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-
-  a.href = url;
-  a.download = "cybersentinel-report.json";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-
-  setTimeout(() => URL.revokeObjectURL(url),1000);
-});
-
-loadPrefs();
-renderPrefs();
+renderLanguage();
 </script>
-
 </body>
 </html>
