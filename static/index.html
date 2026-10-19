@@ -5,163 +5,407 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0b1120">
 <title>CyberSentinel AI</title>
 <style>
 :root {
   color-scheme: dark;
-  --bg: #0b1120;
-  --panel: #141e30;
-  --line: #2c3b50;
-  --accent: #38d9c0;
-  --text: #eef5ff;
-  --muted: #9cacc3;
+  --bg:#0b1120; --panel:#141e30; --line:#2c3b50;
+  --accent:#38d9c0; --text:#eef5ff; --muted:#9cacc3;
 }
-* { box-sizing: border-box; }
+* { box-sizing:border-box; }
 body {
-  margin: 0; background: var(--bg); color: var(--text);
-  font: 16px/1.6 system-ui, sans-serif;
+  margin:0; background:var(--bg); color:var(--text);
+  font:16px/1.6 system-ui,sans-serif;
 }
-main { width: min(760px, 100%); margin: auto; padding: 20px; }
-header { padding: 16px 0 22px; }
-h1 { font-size: 27px; margin: 0; }
-p, .muted { color: var(--muted); }
+main { width:min(850px,100%); margin:auto; padding:18px; }
+header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+h1 { font-size:23px; margin:0; }
+h2 { font-size:18px; margin:0 0 10px; }
+p,.muted { color:var(--muted); }
 .panel {
-  border: 1px solid var(--line); background: var(--panel);
-  border-radius: 16px; padding: 18px; margin-bottom: 16px;
+  border:1px solid var(--line); background:var(--panel);
+  border-radius:16px; padding:16px; margin:16px 0;
 }
-label { display: block; margin: 14px 0 6px; }
-input {
-  width: 100%; padding: 13px; border-radius: 9px;
-  border: 1px solid var(--line); background: var(--bg);
-  color: var(--text); font-size: 16px;
-}
+button,input,textarea,select { font:inherit; }
 button {
-  width: 100%; margin-top: 16px; padding: 13px;
-  border: 0; border-radius: 9px; background: var(--accent);
-  color: #06221f; font-weight: 700; font-size: 16px;
+  border:0; border-radius:9px; padding:11px 15px;
+  background:var(--accent); color:#06221f;
+  font-weight:700; cursor:pointer;
 }
-button:disabled { opacity: .55; }
-.check { display: flex; gap: 10px; align-items: start; }
-.check input { width: 20px; margin-top: 5px; }
-pre {
-  white-space: pre-wrap; overflow-wrap: anywhere;
-  font-size: 13px; color: var(--text);
+button:disabled { opacity:.5; cursor:not-allowed; }
+.secondary { background:#26354b; color:var(--text); }
+#language { width:auto; margin:0; }
+label { display:block; margin:12px 0 5px; }
+input[type="url"],input[type="password"],textarea {
+  width:100%; padding:12px; border:1px solid var(--line);
+  border-radius:9px; background:var(--bg); color:var(--text);
 }
-.status { color: var(--accent); }
+textarea { min-height:95px; resize:vertical; }
+.actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+.actions button { flex:1; }
+.chat {
+  min-height:130px; max-height:360px; overflow:auto;
+  display:flex; flex-direction:column; gap:12px;
+}
+.message {
+  padding:12px; border:1px solid var(--line);
+  border-radius:12px; overflow-wrap:anywhere;
+}
+.message.user { border-color:#287c76; }
+.message strong { display:block; margin-bottom:4px; }
+.status { color:var(--accent); overflow-wrap:anywhere; }
+.step { padding:10px 0; border-bottom:1px solid var(--line); }
+.step:last-child { border-bottom:0; }
+pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:13px; }
+.small { font-size:13px; }
+.check { display:flex; gap:9px; align-items:flex-start; }
+.check input { margin-top:7px; }
+footer { color:var(--muted); font-size:12px; padding:8px 0 20px; }
 </style>
 </head>
 <body>
 <main>
 <header>
-  <h1>🛡️ CyberSentinel AI</h1>
-  <p>Passive security analysis · Permission-controlled</p>
+  <div>
+    <h1>🛡️ CyberSentinel AI</h1>
+    <div class="muted small" id="subtitle">নিরাপদ ওয়েবসাইট বিশ্লেষণ সহকারী</div>
+  </div>
+  <button id="language" class="secondary" type="button">English</button>
 </header>
 
 <section class="panel">
-  <h2>নিরাপত্তা পরীক্ষা</h2>
-  <p>শুধু নিজের বা লিখিত অনুমতিপ্রাপ্ত HTTPS domain ব্যবহার করো।</p>
+  <h2 id="chatTitle">তোমার কাজ লিখো</h2>
+  <p id="chatHelp">উদাহরণ: আমার অনুমোদিত ওয়েবসাইটের HTTPS security headers পরীক্ষা করো।</p>
+  <div class="chat" id="chat" aria-live="polite">
+    <div class="message">
+      <strong id="welcomeTitle">CyberSentinel</strong>
+      <span id="welcomeText">আমি নিয়মভিত্তিক নিরাপত্তা পরীক্ষায় সাহায্য করতে পারি। এখনো প্রকৃত AI মডেল যুক্ত হয়নি।</span>
+    </div>
+  </div>
+  <label for="prompt" id="promptLabel">তোমার নির্দেশনা</label>
+  <textarea id="prompt" placeholder="তুমি কী পরীক্ষা করতে চাও?"></textarea>
+  <div class="actions">
+    <button id="send" type="button">বিশ্লেষণ শুরু</button>
+    <button id="clear" class="secondary" type="button">চ্যাট পরিষ্কার</button>
+  </div>
+  <p class="small" id="chatNotice">শুধু নিজের বা লিখিত অনুমতিপ্রাপ্ত ওয়েবসাইট পরীক্ষা করো।</p>
+</section>
+
+<section class="panel">
+  <h2 id="scanTitle">অনুমোদিত ওয়েবসাইট পরীক্ষা</h2>
+  <p id="scanHelp">এই সংস্করণে সীমিত HTTPS status ও security headers পরীক্ষা করা হয়।</p>
 
   <form id="scanForm">
-    <label for="token">Private scan token</label>
-    <input id="token" type="password" autocomplete="off"
-           required placeholder="Render environment token">
-
-    <label for="target">অনুমোদিত domain URL</label>
+    <label for="token" id="tokenLabel">Private scan token</label>
+    <input id="token" type="password" autocomplete="off" required
+           placeholder="Render environment token">
+    <label for="target" id="targetLabel">ওয়েবসাইটের HTTPS URL</label>
     <input id="target" type="url" required
            placeholder="https://your-domain.example">
-
     <label class="check">
       <input id="consent" type="checkbox" required>
-      <span>আমি এই domain পরীক্ষা করার অনুমতি পেয়েছি এবং
-      একটি সীমিত HTTPS request পাঠাতে সম্মত।</span>
+      <span id="consentText">আমি এই ওয়েবসাইট পরীক্ষা করার অনুমতি পেয়েছি এবং সীমিত HTTPS request-এ সম্মত।</span>
     </label>
-
-    <button id="scanButton" type="submit">নিরাপত্তা পরীক্ষা চালাও</button>
+    <div class="actions">
+      <button id="scan" type="submit">নিরাপত্তা পরীক্ষা চালাও</button>
+    </div>
   </form>
-  <p id="status" role="status" aria-live="polite"></p>
+  <p id="status" class="status" role="status" aria-live="polite"></p>
 </section>
 
 <section class="panel">
-  <h2>পরীক্ষার রিপোর্ট</h2>
-  <p class="muted">সর্বশেষ ফলাফল এখানে দেখা যাবে।</p>
+  <h2 id="stepsTitle">বিশ্লেষণের ধাপ</h2>
+  <div id="steps">
+    <div class="step" id="stepIntro">১. নির্দেশনা বুঝে নেওয়া — অপেক্ষমাণ</div>
+    <div class="step" id="stepScope">২. অনুমতি ও সীমা যাচাই — অপেক্ষমাণ</div>
+    <div class="step" id="stepRun">৩. নিরাপত্তা পরীক্ষা — অপেক্ষমাণ</div>
+    <div class="step" id="stepReport">৪. ফলাফল ও পরামর্শ — অপেক্ষমাণ</div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2 id="reportTitle">নিরাপত্তা রিপোর্ট</h2>
+  <p class="muted" id="reportHelp">শুধু backend থেকে পাওয়া ফলাফলকে পরীক্ষার ফল হিসেবে দেখানো হবে।</p>
   <pre id="report">এখনো কোনো পরীক্ষা চালানো হয়নি।</pre>
-  <button id="download" type="button" disabled>
-    JSON রিপোর্ট সংরক্ষণ
-  </button>
+  <div class="actions">
+    <button id="download" type="button" disabled>JSON রিপোর্ট ডাউনলোড</button>
+  </div>
 </section>
 
-<section class="panel">
-  <h2>সীমাবদ্ধতা</h2>
-  <p>এই সংস্করণে শুধু HTTP status ও security header পরীক্ষা হয়।
-  এটি পূর্ণাঙ্গ vulnerability scan নয়।</p>
-</section>
+<footer id="disclaimer">
+  এটি একটি সীমিত passive checker; পূর্ণাঙ্গ vulnerability scanner নয়। এই সংস্করণে AI API নেই।
+</footer>
 </main>
 
 <script>
-const form = document.getElementById("scanForm");
-const statusEl = document.getElementById("status");
-const reportEl = document.getElementById("report");
-const button = document.getElementById("scanButton");
-const downloadButton = document.getElementById("download");
+const $ = id => document.getElementById(id);
 
+let lang = "bn";
 let lastReport = null;
+let busy = false;
 
-form.addEventListener("submit", async (event) => {
+const words = {
+ bn: {
+  subtitle:"নিরাপদ ওয়েবসাইট বিশ্লেষণ সহকারী",
+  language:"English", chatTitle:"তোমার কাজ লিখো",
+  chatHelp:"উদাহরণ: আমার অনুমোদিত ওয়েবসাইটের HTTPS security headers পরীক্ষা করো।",
+  welcomeTitle:"CyberSentinel",
+  welcomeText:"আমি নিয়মভিত্তিক নিরাপত্তা পরীক্ষায় সাহায্য করতে পারি। এখনো প্রকৃত AI মডেল যুক্ত হয়নি।",
+  promptLabel:"তোমার নির্দেশনা", placeholder:"তুমি কী পরীক্ষা করতে চাও?",
+  send:"বিশ্লেষণ শুরু", clear:"চ্যাট পরিষ্কার",
+  chatNotice:"শুধু নিজের বা লিখিত অনুমতিপ্রাপ্ত ওয়েবসাইট পরীক্ষা করো।",
+  scanTitle:"অনুমোদিত ওয়েবসাইট পরীক্ষা",
+  scanHelp:"এই সংস্করণে সীমিত HTTPS status ও security headers পরীক্ষা করা হয়।",
+  tokenLabel:"Private scan token", targetLabel:"ওয়েবসাইটের HTTPS URL",
+  consentText:"আমি এই ওয়েবসাইট পরীক্ষা করার অনুমতি পেয়েছি এবং সীমিত HTTPS request-এ সম্মত।",
+  scan:"নিরাপত্তা পরীক্ষা চালাও", scanning:"পরীক্ষা চলছে...",
+  stepsTitle:"বিশ্লেষণের ধাপ",
+  stepIntro:"১. নির্দেশনা বুঝে নেওয়া",
+  stepScope:"২. অনুমতি ও সীমা যাচাই",
+  stepRun:"৩. নিরাপত্তা পরীক্ষা",
+  stepReport:"৪. ফলাফল ও পরামর্শ",
+  pending:"অপেক্ষমাণ", done:"সম্পন্ন", failed:"ব্যর্থ",
+  reportTitle:"নিরাপত্তা রিপোর্ট",
+  reportHelp:"শুধু backend থেকে পাওয়া ফলাফলকে পরীক্ষার ফল হিসেবে দেখানো হবে।",
+  noReport:"এখনো কোনো পরীক্ষা চালানো হয়নি।",
+  download:"JSON রিপোর্ট ডাউনলোড", disclaimer:"এটি একটি সীমিত passive checker; পূর্ণাঙ্গ vulnerability scanner নয়। এই সংস্করণে AI API নেই।",
+  empty:"প্রথমে তোমার কাজটি লিখো।",
+  unsupported:"এই সংস্করণে শুধু অনুমোদিত ওয়েবসাইটের security headers পরীক্ষা করা যায়।",
+  started:"অনুরোধ বুঝে নেওয়া হয়েছে। এখন অনুমতি ও URL যাচাই করা হচ্ছে।",
+  needUrl:"নিরাপত্তা পরীক্ষা করতে নিচের URL ঘরে অনুমোদিত HTTPS URL দাও।",
+  ask:"নির্দেশনা", assistant:"CyberSentinel",
+  scope:"শুধু নিজের বা লিখিত অনুমতিপ্রাপ্ত domain পরীক্ষা করো।",
+  failedMsg:"পরীক্ষা ব্যর্থ", success:"Backend থেকে পরীক্ষার ফলাফল পাওয়া গেছে।",
+  error:"ত্রুটি", notVerified:"যাচাইকৃত রিপোর্ট পাওয়া যায়নি।",
+  introDone:"নির্দেশনা গ্রহণ করা হয়েছে",
+  scopeDone:"অনুমোদিত URL ও সম্মতি প্রয়োজন",
+  running:"Backend-এর উত্তরের অপেক্ষায়",
+  reportDone:"Backend-এর ফলাফল দেখানো হয়েছে",
+  saved:"ফলাফল JSON হিসেবে সংরক্ষণ করো"
+ },
+ en: {
+  subtitle:"Permission-controlled website security assistant",
+  language:"বাংলা", chatTitle:"Describe your task",
+  chatHelp:"Example: Check the HTTPS security headers of my authorized website.",
+  welcomeTitle:"CyberSentinel",
+  welcomeText:"I can help with rule-based security checks. A real AI model is not connected yet.",
+  promptLabel:"Your instruction", placeholder:"What would you like to check?",
+  send:"Start analysis", clear:"Clear chat",
+  chatNotice:"Only test websites you own or are explicitly authorized to assess.",
+  scanTitle:"Authorized website check",
+  scanHelp:"This version performs limited HTTPS status and security-header checks.",
+  tokenLabel:"Private scan token", targetLabel:"Website HTTPS URL",
+  consentText:"I am authorized to test this website and consent to a limited HTTPS request.",
+  scan:"Run security check", scanning:"Checking...",
+  stepsTitle:"Analysis steps",
+  stepIntro:"1. Understand the instruction",
+  stepScope:"2. Validate authorization and scope",
+  stepRun:"3. Run security check",
+  stepReport:"4. Results and recommendations",
+  pending:"Pending", done:"Complete", failed:"Failed",
+  reportTitle:"Security report",
+  reportHelp:"Only results returned by the backend are presented as test results.",
+  noReport:"No test has been run yet.",
+  download:"Download JSON report", disclaimer:"This is a limited passive checker, not a full vulnerability scanner. No AI API is connected in this version.",
+  empty:"Please enter a task first.",
+  unsupported:"This version only checks security headers on authorized websites.",
+  started:"Instruction received. Checking authorization and URL next.",
+  needUrl:"Enter an authorized HTTPS URL in the field below to run the check.",
+  ask:"Instruction", assistant:"CyberSentinel",
+  scope:"Only test domains you own or have written authorization to assess.",
+  failedMsg:"Check failed", success:"Results were received from the backend.",
+  error:"Error", notVerified:"No verified report was received.",
+  introDone:"Instruction received",
+  scopeDone:"Authorized URL and consent required",
+  running:"Waiting for backend response",
+  reportDone:"Backend results displayed",
+  saved:"Save the results as JSON"
+ }
+};
+
+function t(key) { return words[lang][key] || words.en[key] || key; }
+
+function applyLanguage() {
+  document.documentElement.lang = lang;
+  const mapping = {
+    subtitle:"subtitle", chatTitle:"chatTitle", chatHelp:"chatHelp",
+    welcomeTitle:"welcomeTitle", welcomeText:"welcomeText",
+    promptLabel:"promptLabel", chatNotice:"chatNotice",
+    scanTitle:"scanTitle", scanHelp:"scanHelp", tokenLabel:"tokenLabel",
+    targetLabel:"targetLabel", consentText:"consentText",
+    stepsTitle:"stepsTitle", reportTitle:"reportTitle",
+    reportHelp:"reportHelp", disclaimer:"disclaimer"
+  };
+  for (const [id,key] of Object.entries(mapping)) $(id).textContent = t(key);
+  $("language").textContent = t("language");
+  $("prompt").placeholder = t("placeholder");
+  $("send").textContent = t("send");
+  $("clear").textContent = t("clear");
+  $("scan").textContent = busy ? t("scanning") : t("scan");
+  $("download").textContent = t("download");
+  if (!lastReport) $("report").textContent = t("noReport");
+  renderSteps();
+}
+
+function renderSteps(states = {}) {
+  const ids = [
+    ["stepIntro","stepIntro"],
+    ["stepScope","stepScope"],
+    ["stepRun","stepRun"],
+    ["stepReport","stepReport"]
+  ];
+  ids.forEach(([id,key]) => {
+    const state = states[key] || "pending";
+    const mark = state === "done" ? "✓" : state === "failed" ? "✗" : "…";
+    $(id).textContent = t(key) + " — " + mark + " " + t(state);
+  });
+}
+
+function addMessage(who, text) {
+  const div = document.createElement("div");
+  div.className = "message" + (who === "user" ? " user" : "");
+  const strong = document.createElement("strong");
+  strong.textContent = who === "user" ? t("ask") : t("assistant");
+  const content = document.createElement("div");
+  content.textContent = text;
+  div.append(strong, content);
+  $("chat").appendChild(div);
+  $("chat").scrollTop = $("chat").scrollHeight;
+}
+
+$("language").addEventListener("click", () => {
+  lang = lang === "bn" ? "en" : "bn";
+  applyLanguage();
+});
+
+$("clear").addEventListener("click", () => {
+  $("chat").replaceChildren();
+  addMessage("assistant", t("welcomeText"));
+});
+
+$("send").addEventListener("click", () => {
+  const prompt = $("prompt").value.trim();
+  if (!prompt) {
+    $("status").textContent = t("empty");
+    return;
+  }
+
+  addMessage("user", prompt);
+  $("prompt").value = "";
+
+  const securityTerms = /https|header|security|নিরাপত্তা|ওয়েবসাইট|website|domain|পরীক্ষা|scan|check|analy[sz]/i;
+
+  renderSteps({
+    stepIntro:"done",
+    stepScope:"pending",
+    stepRun:"pending",
+    stepReport:"pending"
+  });
+
+  if (!securityTerms.test(prompt)) {
+    addMessage("assistant", t("unsupported"));
+    renderSteps({
+      stepIntro:"done", stepScope:"failed",
+      stepRun:"pending", stepReport:"pending"
+    });
+    return;
+  }
+
+  addMessage("assistant", t("started") + " " + t("needUrl"));
+  renderSteps({
+    stepIntro:"done", stepScope:"done",
+    stepRun:"pending", stepReport:"pending"
+  });
+  $("target").focus();
+  $("status").textContent = t("scope");
+});
+
+$("scanForm").addEventListener("submit", async event => {
   event.preventDefault();
-  button.disabled = true;
-  downloadButton.disabled = true;
-  lastReport = null;
-  statusEl.textContent = "পরীক্ষা চলছে...";
-  reportEl.textContent = "";
+  if (busy) return;
 
-  const token = document.getElementById("token").value;
-  const url = document.getElementById("target").value;
-  const consent = document.getElementById("consent").checked;
+  const token = $("token").value;
+  const url = $("target").value.trim();
+  const consent = $("consent").checked;
+
+  if (!consent) return;
+
+  busy = true;
+  lastReport = null;
+  $("scan").disabled = true;
+  $("send").disabled = true;
+  $("download").disabled = true;
+  $("status").textContent = t("scanning");
+  $("report").textContent = "";
+  renderSteps({
+    stepIntro:"done", stepScope:"done",
+    stepRun:"pending", stepReport:"pending"
+  });
 
   try {
     const response = await fetch("/api/scan", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Scan-Token": token
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "X-Scan-Token":token
       },
-      body: JSON.stringify({
-        url,
-        confirm_authorized: consent
+      body:JSON.stringify({
+        url:url,
+        confirm_authorized:consent
       })
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(data.detail || "পরীক্ষা ব্যর্থ হয়েছে");
+      const detail = typeof data.detail === "string"
+        ? data.detail
+        : JSON.stringify(data.detail || data || {});
+      throw new Error(detail || "HTTP " + response.status);
     }
 
     lastReport = data;
-    reportEl.textContent = JSON.stringify(data, null, 2);
-    statusEl.textContent = "পরীক্ষা সম্পন্ন। ফলাফল যাচাই করো।";
-    downloadButton.disabled = false;
+    $("report").textContent = JSON.stringify(data, null, 2);
+    $("status").textContent = t("success");
+    $("download").disabled = false;
+
+    renderSteps({
+      stepIntro:"done", stepScope:"done",
+      stepRun:"done", stepReport:"done"
+    });
+    addMessage("assistant", t("success"));
   } catch (error) {
-    statusEl.textContent = "ত্রুটি: " + error.message;
-    reportEl.textContent = "কোনো যাচাইকৃত রিপোর্ট পাওয়া যায়নি।";
+    $("status").textContent = t("error") + ": " + error.message;
+    $("report").textContent = t("notVerified");
+    renderSteps({
+      stepIntro:"done", stepScope:"done",
+      stepRun:"failed", stepReport:"failed"
+    });
+    addMessage("assistant", t("failedMsg") + ": " + error.message);
   } finally {
-    button.disabled = false;
+    busy = false;
+    $("scan").disabled = false;
+    $("send").disabled = false;
+    $("scan").textContent = t("scan");
   }
 });
 
-downloadButton.addEventListener("click", () => {
+$("download").addEventListener("click", () => {
   if (!lastReport) return;
-
   const blob = new Blob(
     [JSON.stringify(lastReport, null, 2)],
-    { type: "application/json" }
+    {type:"application/json"}
   );
+  const objectUrl = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
+  link.href = objectUrl;
   link.download = "cybersentinel-report.json";
   link.click();
-  URL.revokeObjectURL(link.href);
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
 });
+
+applyLanguage();
 </script>
 </body>
 </html>
