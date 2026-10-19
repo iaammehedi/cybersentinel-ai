@@ -3,270 +3,351 @@
 <html lang="bn">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="referrer" content="no-referrer">
-<meta name="theme-color" content="#0b1120">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#000000">
 <title>CyberSentinel AI</title>
 <style>
 :root {
   color-scheme: dark;
-  --bg:#0b1120; --panel:#141e30; --line:#2c3b50;
-  --accent:#38d9c0; --text:#eef5ff; --muted:#9cacc3;
+  --bg:#000000;
+  --panel:#101010;
+  --line:#292929;
+  --accent:#40E0C0;
+  --text:#F5F7FA;
+  --muted:#9CA3AF;
 }
 * { box-sizing:border-box; }
 body {
-  margin:0; background:var(--bg); color:var(--text);
-  font:16px/1.6 system-ui,sans-serif;
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font:15px/1.6 system-ui,sans-serif;
 }
-main { width:min(850px,100%); margin:auto; padding:18px; }
-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+button,a,select,textarea { font:inherit; }
+button { cursor:pointer; }
+a { color:inherit; text-decoration:none; }
+.layout { min-height:100vh; }
+.sidebar {
+  position:fixed;
+  inset:0 auto 0 0;
+  width:255px;
+  padding:20px 14px;
+  background:var(--panel);
+  border-right:1px solid var(--line);
+  z-index:20;
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
+.brand {
+  font-size:19px;
+  font-weight:800;
+  padding:6px 9px;
+}
+.brand span { color:var(--accent); }
+.nav { display:grid; gap:7px; }
+.nav a {
+  display:block;
+  padding:12px 13px;
+  border:1px solid transparent;
+  border-radius:10px;
+  color:var(--muted);
+}
+.nav a:hover,.nav a.active {
+  color:var(--text);
+  background:var(--bg);
+  border-color:var(--line);
+}
+.nav a.active { box-shadow:inset 3px 0 var(--accent); }
+.sidebar-note {
+  margin-top:auto;
+  color:var(--muted);
+  font-size:12px;
+  padding:10px;
+}
+main {
+  margin-left:255px;
+  padding:20px;
+  width:calc(100% - 255px);
+  max-width:1150px;
+}
+.topbar {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:22px;
+}
+.top-left { display:flex; align-items:center; gap:12px; }
 h1 { font-size:23px; margin:0; }
 h2 { font-size:18px; margin:0 0 10px; }
-p,.muted { color:var(--muted); }
+.muted { color:var(--muted); }
+.small { font-size:12px; }
 .panel {
-  border:1px solid var(--line); background:var(--panel);
-  border-radius:16px; padding:16px; margin:16px 0;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:18px;
+  margin:15px 0;
 }
-button,input,textarea,select { font:inherit; }
 button {
-  border:0; border-radius:9px; padding:11px 15px;
-  background:var(--accent); color:#06221f;
-  font-weight:700; cursor:pointer;
+  border:0;
+  border-radius:9px;
+  padding:10px 14px;
+  background:var(--accent);
+  color:#06221f;
+  font-weight:750;
 }
-button:disabled { opacity:.5; cursor:not-allowed; }
-.secondary { background:#26354b; color:var(--text); }
-#language { width:auto; margin:0; }
-label { display:block; margin:12px 0 5px; }
-input[type="url"],input[type="password"],textarea {
-  width:100%; padding:12px; border:1px solid var(--line);
-  border-radius:9px; background:var(--bg); color:var(--text);
+.secondary {
+  background:var(--panel);
+  color:var(--text);
+  border:1px solid var(--line);
 }
-textarea { min-height:95px; resize:vertical; }
-.actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
-.actions button { flex:1; }
+#menuButton { display:none; }
+textarea,select {
+  width:100%;
+  padding:12px;
+  color:var(--text);
+  background:var(--bg);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+textarea { min-height:120px; resize:vertical; }
+.actions { display:flex; gap:9px; flex-wrap:wrap; margin-top:12px; }
 .chat {
-  min-height:130px; max-height:360px; overflow:auto;
-  display:flex; flex-direction:column; gap:12px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  max-height:430px;
+  overflow:auto;
+  margin:15px 0;
 }
 .message {
-  padding:12px; border:1px solid var(--line);
-  border-radius:12px; overflow-wrap:anywhere;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:12px;
+  overflow-wrap:anywhere;
 }
-.message.user { border-color:#287c76; }
-.message strong { display:block; margin-bottom:4px; }
-.status { color:var(--accent); overflow-wrap:anywhere; }
-.step { padding:10px 0; border-bottom:1px solid var(--line); }
-.step:last-child { border-bottom:0; }
-pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:13px; }
-.small { font-size:13px; }
-.check { display:flex; gap:9px; align-items:flex-start; }
-.check input { margin-top:7px; }
-footer { color:var(--muted); font-size:12px; padding:8px 0 20px; }
+.message.user { border-color:var(--accent); }
+.message strong { display:block; margin-bottom:5px; }
+.quicklinks {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(145px,1fr));
+  gap:10px;
+}
+.quicklinks a {
+  padding:15px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--bg);
+}
+.quicklinks a:hover { border-color:var(--accent); }
+.status { color:var(--accent); }
+.overlay {
+  display:none;
+  position:fixed;
+  inset:0;
+  background:#0009;
+  z-index:15;
+}
+footer {
+  color:var(--muted);
+  font-size:12px;
+  padding:16px 0;
+}
+@media(max-width:760px) {
+  .sidebar {
+    transform:translateX(-100%);
+    transition:transform .2s ease;
+    width:min(285px,85vw);
+  }
+  body.menu-open .sidebar { transform:translateX(0); }
+  body.menu-open .overlay { display:block; }
+  main { margin-left:0; width:100%; padding:14px; }
+  #menuButton { display:inline-block; }
+  h1 { font-size:20px; }
+}
 </style>
 </head>
 <body>
-<main>
-<header>
-  <div>
-    <h1>🛡️ CyberSentinel AI</h1>
-    <div class="muted small" id="subtitle">নিরাপদ ওয়েবসাইট বিশ্লেষণ সহকারী</div>
-  </div>
-  <button id="language" class="secondary" type="button">English</button>
-</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">🛡️ CyberSentinel <span>AI</span></div>
 
-<section class="panel">
-  <h2 id="chatTitle">তোমার কাজ লিখো</h2>
-  <p id="chatHelp">উদাহরণ: আমার অনুমোদিত ওয়েবসাইটের HTTPS security headers পরীক্ষা করো।</p>
-  <div class="chat" id="chat" aria-live="polite">
-    <div class="message">
-      <strong id="welcomeTitle">CyberSentinel</strong>
-      <span id="welcomeText">আমি নিয়মভিত্তিক নিরাপত্তা পরীক্ষায় সাহায্য করতে পারি। এখনো প্রকৃত AI মডেল যুক্ত হয়নি।</span>
+    <nav class="nav" aria-label="Main navigation">
+      <a class="active" href="/" aria-current="page">💬 <span data-i="chat">চ্যাট</span></a>
+      <a href="/static/scanner.html">🔎 <span data-i="scanner">Scanner</span></a>
+      <a href="/static/reports.html">📊 <span data-i="reports">Reports</span></a>
+      <a href="/static/history.html">🕘 <span data-i="history">History</span></a>
+      <a href="/static/settings.html">⚙️ <span data-i="settings">Settings</span></a>
+    </nav>
+
+    <div class="sidebar-note" data-i="sideNote">
+      শুধু অনুমোদিত ওয়েবসাইট পরীক্ষা করো।
     </div>
-  </div>
-  <label for="prompt" id="promptLabel">তোমার নির্দেশনা</label>
-  <textarea id="prompt" placeholder="তুমি কী পরীক্ষা করতে চাও?"></textarea>
-  <div class="actions">
-    <button id="send" type="button">বিশ্লেষণ শুরু</button>
-    <button id="clear" class="secondary" type="button">চ্যাট পরিষ্কার</button>
-  </div>
-  <p class="small" id="chatNotice">শুধু নিজের বা লিখিত অনুমতিপ্রাপ্ত ওয়েবসাইট পরীক্ষা করো।</p>
-</section>
+  </aside>
 
-<section class="panel">
-  <h2 id="scanTitle">অনুমোদিত ওয়েবসাইট পরীক্ষা</h2>
-  <p id="scanHelp">এই সংস্করণে সীমিত HTTPS status ও security headers পরীক্ষা করা হয়।</p>
+  <div class="overlay" id="overlay"></div>
 
-  <form id="scanForm">
-    <label for="token" id="tokenLabel">Private scan token</label>
-    <input id="token" type="password" autocomplete="off" required
-           placeholder="Render environment token">
-    <label for="target" id="targetLabel">ওয়েবসাইটের HTTPS URL</label>
-    <input id="target" type="url" required
-           placeholder="https://your-domain.example">
-    <label class="check">
-      <input id="consent" type="checkbox" required>
-      <span id="consentText">আমি এই ওয়েবসাইট পরীক্ষা করার অনুমতি পেয়েছি এবং সীমিত HTTPS request-এ সম্মত।</span>
-    </label>
-    <div class="actions">
-      <button id="scan" type="submit">নিরাপত্তা পরীক্ষা চালাও</button>
-    </div>
-  </form>
-  <p id="status" class="status" role="status" aria-live="polite"></p>
-</section>
+  <main>
+    <header class="topbar">
+      <div class="top-left">
+        <button id="menuButton" class="secondary"
+                type="button" aria-label="Open menu"
+                aria-expanded="false">☰</button>
+        <div>
+          <h1 data-i="pageTitle">চ্যাট</h1>
+          <div class="muted small" data-i="subtitle">
+            নিরাপদ ওয়েবসাইট বিশ্লেষণ সহকারী
+          </div>
+        </div>
+      </div>
+      <button id="languageButton" class="secondary" type="button">
+        English
+      </button>
+    </header>
 
-<section class="panel">
-  <h2 id="stepsTitle">বিশ্লেষণের ধাপ</h2>
-  <div id="steps">
-    <div class="step" id="stepIntro">১. নির্দেশনা বুঝে নেওয়া — অপেক্ষমাণ</div>
-    <div class="step" id="stepScope">২. অনুমতি ও সীমা যাচাই — অপেক্ষমাণ</div>
-    <div class="step" id="stepRun">৩. নিরাপত্তা পরীক্ষা — অপেক্ষমাণ</div>
-    <div class="step" id="stepReport">৪. ফলাফল ও পরামর্শ — অপেক্ষমাণ</div>
-  </div>
-</section>
+    <section class="panel">
+      <h2 data-i="welcomeTitle">CyberSentinel AI-তে স্বাগতম</h2>
+      <p class="muted" data-i="welcomeText">
+        নিরাপত্তা পরীক্ষা পরিচালনা করতে Scanner ব্যবহার করো।
+        এই চ্যাটটি এখন নিয়মভিত্তিক; প্রকৃত AI মডেল যুক্ত নেই।
+      </p>
+      <div class="quicklinks">
+        <a href="/static/scanner.html">
+          <strong>🔎 <span data-i="scanner">Scanner</span></strong>
+          <div class="muted small" data-i="scannerDesc">
+            অনুমোদিত HTTPS header পরীক্ষা
+          </div>
+        </a>
+        <a href="/static/reports.html">
+          <strong>📊 <span data-i="reports">Reports</span></strong>
+          <div class="muted small" data-i="reportsDesc">
+            নিরাপত্তা রিপোর্ট দেখো
+          </div>
+        </a>
+        <a href="/static/history.html">
+          <strong>🕘 <span data-i="history">History</span></strong>
+          <div class="muted small" data-i="historyDesc">
+            আগের ফলাফল দেখো
+          </div>
+        </a>
+        <a href="/static/settings.html">
+          <strong>⚙️ <span data-i="settings">Settings</span></strong>
+          <div class="muted small" data-i="settingsDesc">
+            ভাষা ও থিমের সেটিংস
+          </div>
+        </a>
+      </div>
+    </section>
 
-<section class="panel">
-  <h2 id="reportTitle">নিরাপত্তা রিপোর্ট</h2>
-  <p class="muted" id="reportHelp">শুধু backend থেকে পাওয়া ফলাফলকে পরীক্ষার ফল হিসেবে দেখানো হবে।</p>
-  <pre id="report">এখনো কোনো পরীক্ষা চালানো হয়নি।</pre>
-  <div class="actions">
-    <button id="download" type="button" disabled>JSON রিপোর্ট ডাউনলোড</button>
-  </div>
-</section>
+    <section class="panel">
+      <h2 data-i="chatTitle">তোমার কাজ লিখো</h2>
+      <div class="chat" id="chat" aria-live="polite">
+        <div class="message">
+          <strong>CyberSentinel</strong>
+          <span data-i="firstMessage">
+            আমি তোমাকে অনুমোদিত ওয়েবসাইটের নিরাপত্তা পরীক্ষা
+            পরিচালনা করতে সাহায্য করতে পারি।
+          </span>
+        </div>
+      </div>
+      <label for="prompt" data-i="promptLabel">তোমার নির্দেশনা</label>
+      <textarea id="prompt"
+        placeholder="তুমি কী পরীক্ষা করতে চাও?"></textarea>
+      <div class="actions">
+        <button id="sendButton" type="button" data-i="send">
+          বিশ্লেষণ শুরু
+        </button>
+        <button id="clearButton" type="button" class="secondary"
+                data-i="clear">চ্যাট পরিষ্কার</button>
+      </div>
+      <p class="muted small" data-i="notice">
+        এটি পূর্ণাঙ্গ AI scanner নয়। স্ক্যানের জন্য Scanner পেজ ব্যবহার করো।
+      </p>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
 
-<footer id="disclaimer">
-  এটি একটি সীমিত passive checker; পূর্ণাঙ্গ vulnerability scanner নয়। এই সংস্করণে AI API নেই।
-</footer>
-</main>
+    <footer data-i="footer">
+      CyberSentinel AI — সীমিত passive security checker।
+      শুধু অনুমতিপ্রাপ্ত সিস্টেম পরীক্ষা করো।
+    </footer>
+  </main>
+</div>
 
 <script>
 const $ = id => document.getElementById(id);
 
-let lang = "bn";
-let lastReport = null;
-let busy = false;
-
-const words = {
- bn: {
-  subtitle:"নিরাপদ ওয়েবসাইট বিশ্লেষণ সহকারী",
-  language:"English", chatTitle:"তোমার কাজ লিখো",
-  chatHelp:"উদাহরণ: আমার অনুমোদিত ওয়েবসাইটের HTTPS security headers পরীক্ষা করো।",
-  welcomeTitle:"CyberSentinel",
-  welcomeText:"আমি নিয়মভিত্তিক নিরাপত্তা পরীক্ষায় সাহায্য করতে পারি। এখনো প্রকৃত AI মডেল যুক্ত হয়নি।",
-  promptLabel:"তোমার নির্দেশনা", placeholder:"তুমি কী পরীক্ষা করতে চাও?",
-  send:"বিশ্লেষণ শুরু", clear:"চ্যাট পরিষ্কার",
-  chatNotice:"শুধু নিজের বা লিখিত অনুমতিপ্রাপ্ত ওয়েবসাইট পরীক্ষা করো।",
-  scanTitle:"অনুমোদিত ওয়েবসাইট পরীক্ষা",
-  scanHelp:"এই সংস্করণে সীমিত HTTPS status ও security headers পরীক্ষা করা হয়।",
-  tokenLabel:"Private scan token", targetLabel:"ওয়েবসাইটের HTTPS URL",
-  consentText:"আমি এই ওয়েবসাইট পরীক্ষা করার অনুমতি পেয়েছি এবং সীমিত HTTPS request-এ সম্মত।",
-  scan:"নিরাপত্তা পরীক্ষা চালাও", scanning:"পরীক্ষা চলছে...",
-  stepsTitle:"বিশ্লেষণের ধাপ",
-  stepIntro:"১. নির্দেশনা বুঝে নেওয়া",
-  stepScope:"২. অনুমতি ও সীমা যাচাই",
-  stepRun:"৩. নিরাপত্তা পরীক্ষা",
-  stepReport:"৪. ফলাফল ও পরামর্শ",
-  pending:"অপেক্ষমাণ", done:"সম্পন্ন", failed:"ব্যর্থ",
-  reportTitle:"নিরাপত্তা রিপোর্ট",
-  reportHelp:"শুধু backend থেকে পাওয়া ফলাফলকে পরীক্ষার ফল হিসেবে দেখানো হবে।",
-  noReport:"এখনো কোনো পরীক্ষা চালানো হয়নি।",
-  download:"JSON রিপোর্ট ডাউনলোড", disclaimer:"এটি একটি সীমিত passive checker; পূর্ণাঙ্গ vulnerability scanner নয়। এই সংস্করণে AI API নেই।",
-  empty:"প্রথমে তোমার কাজটি লিখো।",
-  unsupported:"এই সংস্করণে শুধু অনুমোদিত ওয়েবসাইটের security headers পরীক্ষা করা যায়।",
-  started:"অনুরোধ বুঝে নেওয়া হয়েছে। এখন অনুমতি ও URL যাচাই করা হচ্ছে।",
-  needUrl:"নিরাপত্তা পরীক্ষা করতে নিচের URL ঘরে অনুমোদিত HTTPS URL দাও।",
-  ask:"নির্দেশনা", assistant:"CyberSentinel",
-  scope:"শুধু নিজের বা লিখিত অনুমতিপ্রাপ্ত domain পরীক্ষা করো।",
-  failedMsg:"পরীক্ষা ব্যর্থ", success:"Backend থেকে পরীক্ষার ফলাফল পাওয়া গেছে।",
-  error:"ত্রুটি", notVerified:"যাচাইকৃত রিপোর্ট পাওয়া যায়নি।",
-  introDone:"নির্দেশনা গ্রহণ করা হয়েছে",
-  scopeDone:"অনুমোদিত URL ও সম্মতি প্রয়োজন",
-  running:"Backend-এর উত্তরের অপেক্ষায়",
-  reportDone:"Backend-এর ফলাফল দেখানো হয়েছে",
-  saved:"ফলাফল JSON হিসেবে সংরক্ষণ করো"
- },
- en: {
-  subtitle:"Permission-controlled website security assistant",
-  language:"বাংলা", chatTitle:"Describe your task",
-  chatHelp:"Example: Check the HTTPS security headers of my authorized website.",
-  welcomeTitle:"CyberSentinel",
-  welcomeText:"I can help with rule-based security checks. A real AI model is not connected yet.",
-  promptLabel:"Your instruction", placeholder:"What would you like to check?",
-  send:"Start analysis", clear:"Clear chat",
-  chatNotice:"Only test websites you own or are explicitly authorized to assess.",
-  scanTitle:"Authorized website check",
-  scanHelp:"This version performs limited HTTPS status and security-header checks.",
-  tokenLabel:"Private scan token", targetLabel:"Website HTTPS URL",
-  consentText:"I am authorized to test this website and consent to a limited HTTPS request.",
-  scan:"Run security check", scanning:"Checking...",
-  stepsTitle:"Analysis steps",
-  stepIntro:"1. Understand the instruction",
-  stepScope:"2. Validate authorization and scope",
-  stepRun:"3. Run security check",
-  stepReport:"4. Results and recommendations",
-  pending:"Pending", done:"Complete", failed:"Failed",
-  reportTitle:"Security report",
-  reportHelp:"Only results returned by the backend are presented as test results.",
-  noReport:"No test has been run yet.",
-  download:"Download JSON report", disclaimer:"This is a limited passive checker, not a full vulnerability scanner. No AI API is connected in this version.",
-  empty:"Please enter a task first.",
-  unsupported:"This version only checks security headers on authorized websites.",
-  started:"Instruction received. Checking authorization and URL next.",
-  needUrl:"Enter an authorized HTTPS URL in the field below to run the check.",
-  ask:"Instruction", assistant:"CyberSentinel",
-  scope:"Only test domains you own or have written authorization to assess.",
-  failedMsg:"Check failed", success:"Results were received from the backend.",
-  error:"Error", notVerified:"No verified report was received.",
-  introDone:"Instruction received",
-  scopeDone:"Authorized URL and consent required",
-  running:"Waiting for backend response",
-  reportDone:"Backend results displayed",
-  saved:"Save the results as JSON"
- }
+const translations = {
+  bn: {
+    chat:"চ্যাট", scanner:"Scanner", reports:"Reports",
+    history:"History", settings:"Settings",
+    sideNote:"শুধু অনুমোদিত ওয়েবসাইট পরীক্ষা করো।",
+    pageTitle:"চ্যাট",
+    subtitle:"নিরাপদ ওয়েবসাইট বিশ্লেষণ সহকারী",
+    language:"English",
+    welcomeTitle:"CyberSentinel AI-তে স্বাগতম",
+    welcomeText:"নিরাপত্তা পরীক্ষা পরিচালনা করতে Scanner ব্যবহার করো। এই চ্যাটটি এখন নিয়মভিত্তিক; প্রকৃত AI মডেল যুক্ত নেই।",
+    scannerDesc:"অনুমোদিত HTTPS header পরীক্ষা",
+    reportsDesc:"নিরাপত্তা রিপোর্ট দেখো",
+    historyDesc:"আগের ফলাফল দেখো",
+    settingsDesc:"ভাষা ও থিমের সেটিংস",
+    chatTitle:"তোমার কাজ লিখো",
+    firstMessage:"আমি তোমাকে অনুমোদিত ওয়েবসাইটের নিরাপত্তা পরীক্ষা পরিচালনা করতে সাহায্য করতে পারি।",
+    promptLabel:"তোমার নির্দেশনা",
+    placeholder:"তুমি কী পরীক্ষা করতে চাও?",
+    send:"বিশ্লেষণ শুরু", clear:"চ্যাট পরিষ্কার",
+    notice:"এটি পূর্ণাঙ্গ AI scanner নয়। স্ক্যানের জন্য Scanner পেজ ব্যবহার করো।",
+    footer:"CyberSentinel AI — সীমিত passive security checker। শুধু অনুমতিপ্রাপ্ত সিস্টেম পরীক্ষা করো।",
+    empty:"প্রথমে তোমার নির্দেশনা লিখো।",
+    response:"নিরাপত্তা পরীক্ষা করতে Scanner পেজ খোলো। শুধু নিজের বা লিখিত অনুমতিপ্রাপ্ত ডোমেইন পরীক্ষা করো।",
+    cleared:"চ্যাট পরিষ্কার করা হয়েছে।"
+  },
+  en: {
+    chat:"Chat", scanner:"Scanner", reports:"Reports",
+    history:"History", settings:"Settings",
+    sideNote:"Only test authorized websites.",
+    pageTitle:"Chat",
+    subtitle:"Website security assistant",
+    language:"বাংলা",
+    welcomeTitle:"Welcome to CyberSentinel AI",
+    welcomeText:"Use Scanner to run a security check. This chat is rule-based; no real AI model is connected.",
+    scannerDesc:"Authorized HTTPS header check",
+    reportsDesc:"View security reports",
+    historyDesc:"View previous results",
+    settingsDesc:"Language and theme settings",
+    chatTitle:"Describe your task",
+    firstMessage:"I can help you run security checks on websites you are authorized to assess.",
+    promptLabel:"Your instruction",
+    placeholder:"What would you like to check?",
+    send:"Start analysis", clear:"Clear chat",
+    notice:"This is not a full AI scanner. Use the Scanner page to run checks.",
+    footer:"CyberSentinel AI — limited passive security checker. Test authorized systems only.",
+    empty:"Please enter an instruction first.",
+    response:"Open the Scanner page to run a check. Only test domains you own or have written permission to assess.",
+    cleared:"Chat cleared."
+  }
 };
 
-function t(key) { return words[lang][key] || words.en[key] || key; }
+let lang = "bn";
 
 function applyLanguage() {
   document.documentElement.lang = lang;
-  const mapping = {
-    subtitle:"subtitle", chatTitle:"chatTitle", chatHelp:"chatHelp",
-    welcomeTitle:"welcomeTitle", welcomeText:"welcomeText",
-    promptLabel:"promptLabel", chatNotice:"chatNotice",
-    scanTitle:"scanTitle", scanHelp:"scanHelp", tokenLabel:"tokenLabel",
-    targetLabel:"targetLabel", consentText:"consentText",
-    stepsTitle:"stepsTitle", reportTitle:"reportTitle",
-    reportHelp:"reportHelp", disclaimer:"disclaimer"
-  };
-  for (const [id,key] of Object.entries(mapping)) $(id).textContent = t(key);
-  $("language").textContent = t("language");
-  $("prompt").placeholder = t("placeholder");
-  $("send").textContent = t("send");
-  $("clear").textContent = t("clear");
-  $("scan").textContent = busy ? t("scanning") : t("scan");
-  $("download").textContent = t("download");
-  if (!lastReport) $("report").textContent = t("noReport");
-  renderSteps();
-}
-
-function renderSteps(states = {}) {
-  const ids = [
-    ["stepIntro","stepIntro"],
-    ["stepScope","stepScope"],
-    ["stepRun","stepRun"],
-    ["stepReport","stepReport"]
-  ];
-  ids.forEach(([id,key]) => {
-    const state = states[key] || "pending";
-    const mark = state === "done" ? "✓" : state === "failed" ? "✗" : "…";
-    $(id).textContent = t(key) + " — " + mark + " " + t(state);
+  document.querySelectorAll("[data-i]").forEach(el => {
+    const key = el.dataset.i;
+    if (translations[lang][key]) {
+      el.textContent = translations[lang][key];
+    }
   });
+  $("languageButton").textContent = translations[lang].language;
+  $("prompt").placeholder = translations[lang].placeholder;
 }
 
 function addMessage(who, text) {
   const div = document.createElement("div");
   div.className = "message" + (who === "user" ? " user" : "");
   const strong = document.createElement("strong");
-  strong.textContent = who === "user" ? t("ask") : t("assistant");
+  strong.textContent = who === "user" ? translations[lang].chat : "CyberSentinel";
   const content = document.createElement("div");
   content.textContent = text;
   div.append(strong, content);
@@ -274,182 +355,92 @@ function addMessage(who, text) {
   $("chat").scrollTop = $("chat").scrollHeight;
 }
 
-$("language").addEventListener("click", () => {
+$("menuButton").addEventListener("click", () => {
+  const open = document.body.classList.toggle("menu-open");
+  $("menuButton").setAttribute("aria-expanded", String(open));
+});
+
+$("overlay").addEventListener("click", closeMenu);
+
+function closeMenu() {
+  document.body.classList.remove("menu-open");
+  $("menuButton").setAttribute("aria-expanded", "false");
+}
+
+document.querySelectorAll(".nav a").forEach(link => {
+  link.addEventListener("click", closeMenu);
+});
+
+$("languageButton").addEventListener("click", () => {
   lang = lang === "bn" ? "en" : "bn";
   applyLanguage();
+  try {
+    localStorage.setItem("cybersentinel.preferences",
+      JSON.stringify({
+        ...JSON.parse(localStorage.getItem("cybersentinel.preferences") || "{}"),
+        language: lang
+      })
+    );
+  } catch (_) {}
 });
 
-$("clear").addEventListener("click", () => {
-  $("chat").replaceChildren();
-  addMessage("assistant", t("welcomeText"));
-});
-
-$("send").addEventListener("click", () => {
+$("sendButton").addEventListener("click", () => {
   const prompt = $("prompt").value.trim();
   if (!prompt) {
-    $("status").textContent = t("empty");
+    $("status").textContent = translations[lang].empty;
     return;
   }
 
   addMessage("user", prompt);
   $("prompt").value = "";
-
-  const securityTerms = /https|header|security|নিরাপত্তা|ওয়েবসাইট|website|domain|পরীক্ষা|scan|check|analy[sz]/i;
-
-  renderSteps({
-    stepIntro:"done",
-    stepScope:"pending",
-    stepRun:"pending",
-    stepReport:"pending"
-  });
-
-  if (!securityTerms.test(prompt)) {
-    addMessage("assistant", t("unsupported"));
-    renderSteps({
-      stepIntro:"done", stepScope:"failed",
-      stepRun:"pending", stepReport:"pending"
-    });
-    return;
-  }
-
-  addMessage("assistant", t("started") + " " + t("needUrl"));
-  renderSteps({
-    stepIntro:"done", stepScope:"done",
-    stepRun:"pending", stepReport:"pending"
-  });
-  $("target").focus();
-  $("status").textContent = t("scope");
+  addMessage("assistant", translations[lang].response);
+  $("status").textContent = "";
 });
 
-$("scanForm").addEventListener("submit", async event => {
-  event.preventDefault();
-  if (busy) return;
-
-  const token = $("token").value;
-  const url = $("target").value.trim();
-  const consent = $("consent").checked;
-
-  if (!consent) return;
-
-  busy = true;
-  lastReport = null;
-  $("scan").disabled = true;
-  $("send").disabled = true;
-  $("download").disabled = true;
-  $("status").textContent = t("scanning");
-  $("report").textContent = "";
-  renderSteps({
-    stepIntro:"done", stepScope:"done",
-    stepRun:"pending", stepReport:"pending"
-  });
-
-  try {
-    const response = await fetch("/api/scan", {
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json",
-        "X-Scan-Token":token
-      },
-      body:JSON.stringify({
-        url:url,
-        confirm_authorized:consent
-      })
-    });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      const detail = typeof data.detail === "string"
-        ? data.detail
-        : JSON.stringify(data.detail || data || {});
-      throw new Error(detail || "HTTP " + response.status);
-    }
-
-    lastReport = data;
-    $("report").textContent = JSON.stringify(data, null, 2);
-    $("status").textContent = t("success");
-    $("download").disabled = false;
-
-    renderSteps({
-      stepIntro:"done", stepScope:"done",
-      stepRun:"done", stepReport:"done"
-    });
-    addMessage("assistant", t("success"));
-  } catch (error) {
-    $("status").textContent = t("error") + ": " + error.message;
-    $("report").textContent = t("notVerified");
-    renderSteps({
-      stepIntro:"done", stepScope:"done",
-      stepRun:"failed", stepReport:"failed"
-    });
-    addMessage("assistant", t("failedMsg") + ": " + error.message);
-  } finally {
-    busy = false;
-    $("scan").disabled = false;
-    $("send").disabled = false;
-    $("scan").textContent = t("scan");
-  }
+$("clearButton").addEventListener("click", () => {
+  $("chat").replaceChildren();
+  addMessage("assistant", translations[lang].cleared);
+  $("status").textContent = "";
 });
 
-$("download").addEventListener("click", () => {
-  if (!lastReport) return;
-  const blob = new Blob(
-    [JSON.stringify(lastReport, null, 2)],
-    {type:"application/json"}
+try {
+  const saved = JSON.parse(
+    localStorage.getItem("cybersentinel.preferences") || "{}"
   );
-  const objectUrl = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = objectUrl;
-  link.download = "cybersentinel-report.json";
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-});
 
-function loadSharedPreferences() {
-  try {
-    const saved = JSON.parse(
-      localStorage.getItem("cybersentinel.preferences") || "{}"
-    );
-
-    const themes = {
-      deep: {
-        bg:"#000000", panel:"#101010", line:"#292929",
-        accent:"#40E0C0", text:"#F5F7FA", muted:"#9CA3AF"
-      },
-      midnight: {
-        bg:"#0B1120", panel:"#141E30", line:"#2C3B50",
-        accent:"#38D9C0", text:"#EEF5FF", muted:"#9CACC3"
-      },
-      matrix: {
-        bg:"#020602", panel:"#091109", line:"#203520",
-        accent:"#39FF14", text:"#E9FFE7", muted:"#9BB49A"
-      },
-      purple: {
-        bg:"#0B0812", panel:"#15101F", line:"#352745",
-        accent:"#A78BFA", text:"#F5F0FF", muted:"#B8AACB"
-      },
-      light: {
-        bg:"#F4F6FA", panel:"#FFFFFF", line:"#D9E0EA",
-        accent:"#147D71", text:"#152033", muted:"#5C6B7E"
-      }
-    };
-
-    const theme = themes[saved.theme] || themes.deep;
-
-    Object.entries(theme).forEach(([key, value]) => {
-      document.documentElement.style.setProperty("--" + key, value);
-    });
-
-    if (saved.language === "bn" || saved.language === "en") {
-      lang = saved.language;
+  const themes = {
+    deep: {
+      bg:"#000000", panel:"#101010", line:"#292929",
+      accent:"#40E0C0", text:"#F5F7FA", muted:"#9CA3AF"
+    },
+    midnight: {
+      bg:"#0B1120", panel:"#141E30", line:"#2C3B50",
+      accent:"#38D9C0", text:"#EEF5FF", muted:"#9CACC3"
+    },
+    matrix: {
+      bg:"#020602", panel:"#091109", line:"#203520",
+      accent:"#39FF14", text:"#E9FFE7", muted:"#9BB49A"
+    },
+    purple: {
+      bg:"#0B0812", panel:"#15101F", line:"#352745",
+      accent:"#A78BFA", text:"#F5F0FF", muted:"#B8AACB"
+    },
+    light: {
+      bg:"#F4F6FA", panel:"#FFFFFF", line:"#D9E0EA",
+      accent:"#147D71", text:"#152033", muted:"#5C6B7E"
     }
-  } catch (error) {
-    console.warn("Could not load saved preferences.");
-  }
-}
+  };
 
-loadSharedPreferences();
-  
+  const theme = themes[saved.theme] || themes.deep;
+  Object.entries(theme).forEach(([key, value]) => {
+    document.documentElement.style.setProperty("--" + key, value);
+  });
+
+  if (saved.language === "bn" || saved.language === "en") {
+    lang = saved.language;
+  }
+} catch (_) {}
+
 applyLanguage();
 </script>
 </body>
